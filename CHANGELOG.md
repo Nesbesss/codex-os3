@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-09-24)
 First public version, grown from a live prototype used with rabbit OS3.
 
 - OpenAI-compatible router over `codex exec`: chat, streaming, tool calling with several calls per turn

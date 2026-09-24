@@ -1,4 +1,4 @@
-# codex-os3 tray icon for Windows (BETA, untested). Polls the router's local API and
+# codex-os3 tray icon for Windows (beta). Polls the router's local API and
 # offers the same actions as the macOS menu bar app. Started at logon by install.ps1.
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 

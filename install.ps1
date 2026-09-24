@@ -1,4 +1,4 @@
-# codex-os3 installer for Windows (BETA: not yet tested on a real Windows + rabbit-agent setup)
+# codex-os3 installer for Windows (beta: CI-tested; not yet tested with a real rabbit-agent on Windows)
 #   irm https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.ps1 | iex
 # Options (when run as a file): -Uninstall [-Purge]  -NoTray  -NoWait  -Port N
 # Env: CODEX_OS3_SRC=<local checkout>, CODEX_OS3_REF=<branch|tag>

@@ -21,7 +21,7 @@ On the machine that runs your OS3 node (rabbit-agent), in a terminal **on that m
 curl -fsSL https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.sh | bash
 ```
 
-**Windows (beta)**
+**Windows (beta: no real OS3 test yet)**
 ```powershell
 irm https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.ps1 | iex
 ```
@@ -126,6 +126,15 @@ app/macos/build.sh                                        # menu bar app (Xcode 
 `bench/` runs real computer-use tasks on a Mac through the router (see `bench/README.md`). It is
 expensive in Codex quota; never run it in CI.
 
-Platform status: **macOS** tested · **Linux** built, not yet tested end to end · **Windows** beta, untested.
+## Platform status
+
+| | install / service / upgrade / uninstall | with a real rabbit-agent + OS3 |
+|---|---|---|
+| **macOS** | ✓ launchd, tested on real Macs | ✓ in daily use |
+| **Linux** | ✓ systemd user service and cron fallback (CI + Docker) | not yet |
+| **Windows** | ✓ Task Scheduler (CI on Windows Server) | not yet (beta) |
+
+CI runs the full test suite on macOS, Linux and Windows with Python 3.9 and 3.12, against a fake Codex
+CLI (no quota), plus end-to-end installer runs on Linux and Windows.
 
 MIT license.
