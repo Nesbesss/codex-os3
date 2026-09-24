@@ -1,6 +1,6 @@
 """Long-running service process (started by launchd/systemd).
 
-Runs one HTTP worker at a time and the watchdog. On a reload request (`codex-os3 reload`,
+Runs one HTTP worker at a time (the worker also runs the watchdog, so reloads update it). On a reload request (`codex-os3 reload`,
 the UI, an upgrade: a reload.request file, or SIGHUP) it starts a new worker first, waits
 until it answers /health, then asks the old worker to stop accepting and drain its
 in-flight requests. Both bind the port with SO_REUSEPORT, so OS3's tunnel never sees a
@@ -8,7 +8,7 @@ refused connection. Windows has no SO_REUSEPORT: there the old worker stops list
 first and the new one starts right after (a gap of about a second)."""
 import json, os, signal, socket, subprocess, sys, threading, time, urllib.request
 
-from . import config, engine, store, watchdog
+from . import config, engine, store
 
 PIDFILE = os.path.join(config.HOME, "supervisor.pid")
 RELOAD_FILE = os.path.join(config.HOME, "reload.request")
@@ -53,7 +53,6 @@ def run():
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
 
-    threading.Thread(target=watchdog.loop, args=(stop,), daemon=True, name="watchdog").start()
     worker = _spawn()
     engine.log(f"supervisor {os.getpid()} started worker {worker.pid}")
     store.event("service_start", f"supervisor {os.getpid()}", source="supervisor")

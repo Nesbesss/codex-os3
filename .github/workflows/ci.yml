@@ -38,6 +38,38 @@ jobs:
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errs) | Out-Null
             if ($errs) { $errs | ForEach-Object { Write-Error "${f}: $_" }; exit 1 }
           }
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install with the fake codex, chat, reload, uninstall
+        shell: pwsh
+        run: |
+          $bin = Join-Path $env:RUNNER_TEMP "bin"; New-Item -ItemType Directory $bin | Out-Null
+          Copy-Item tests/fake_codex/codex.py $bin
+          Set-Content (Join-Path $bin "codex.cmd") "@echo off`r`npython `"%~dp0codex.py`" %*"
+          $env:PATH = "$bin;$env:PATH"
+          $env:CODEX_OS3_SRC = $PWD.Path
+          ./install.ps1 -NoTray -NoWait
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "install failed" }
+          $cfg = Get-Content "$env:USERPROFILE/.codex-os3/config.json" -Raw | ConvertFrom-Json
+          $h = @{ Authorization = "Bearer $($cfg.api_key)" }
+          $body = '{"messages":[{"role":"user","content":"hi"}]}'
+          $r = Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/v1/chat/completions" -Method Post -Headers $h -Body $body -ContentType "application/json"
+          if ($r.choices[0].message.content -notlike "*fake codex*") { throw "chat failed: $($r | ConvertTo-Json -Depth 5)" }
+          $before = (Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/health").pid
+          Push-Location "$env:USERPROFILE/.codex-os3/app"; python -m codex_os3 reload; Pop-Location
+          $after = $before
+          for ($i = 0; $i -lt 60 -and $after -eq $before; $i++) {
+            Start-Sleep 1
+            try { $after = (Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/health" -TimeoutSec 2).pid } catch {}
+          }
+          if ($after -eq $before) { Get-Content "$env:USERPROFILE/.codex-os3/service.log"; throw "reload did not swap the worker" }
+          ./install.ps1 -Uninstall -Purge
+          Start-Sleep 3
+          try { Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/health" -TimeoutSec 2; throw "still running after uninstall" } catch { if ($_.Exception.Message -like "*still running*") { throw } }
   macos-app:
     runs-on: macos-latest
     steps:

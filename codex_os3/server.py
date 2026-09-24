@@ -223,6 +223,7 @@ def serve_worker():
     stopping = threading.Event()
 
     def on_term(*_):
+        wd_stop.set()  # the replacement worker takes the watchdog lease
         srv.draining = True
         stopping.set()
         threading.Thread(target=srv.shutdown, daemon=True).start()
@@ -248,6 +249,9 @@ def serve_worker():
                 return
             time.sleep(0.5)
     threading.Thread(target=watch_drain, daemon=True).start()
+    from . import watchdog
+    wd_stop = threading.Event()
+    threading.Thread(target=watchdog.loop, args=(wd_stop,), daemon=True, name="watchdog").start()
     engine.log(f"worker {os.getpid()} listening on {cfg['bind']}:{cfg['port']}")
     store.event("worker_start", f"worker {os.getpid()} on {cfg['bind']}:{cfg['port']}", source="worker")
     srv.serve_forever(poll_interval=0.5)

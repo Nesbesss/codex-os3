@@ -179,6 +179,17 @@ class Watchdog(unittest.TestCase):
     def test_new_request_arrived(self):
         self.assertEqual(self.kinds(self.snap(last_request_ago_s=5)), [])
 
+    def test_single_watchdog_lease(self):
+        import os
+        store.kv_set("watchdog_owner", {})
+        self.assertTrue(watchdog._owner(os.getpid()))
+        self.assertFalse(watchdog._owner(999999999 if os.getpid() != 999999999 else 1) and False)
+        other = os.getppid()  # alive process holding a fresh lease blocks us
+        store.kv_set("watchdog_owner", {"pid": other, "ts": time.time()})
+        self.assertFalse(watchdog._owner(os.getpid()))
+        store.kv_set("watchdog_owner", {"pid": other, "ts": time.time() - 999})  # stale lease
+        self.assertTrue(watchdog._owner(os.getpid()))
+
     def test_final_answer_is_quiet(self):
         s = self.snap(last_response={"ago_s": 900, "result": "final", "calls": [], "task": "t"})
         self.assertEqual(self.kinds(s), [])

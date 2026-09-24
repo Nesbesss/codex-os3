@@ -1,8 +1,8 @@
 # codex-os3 installer for Windows (BETA: not yet tested on a real Windows + rabbit-agent setup)
 #   irm https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.ps1 | iex
-# Options (when run as a file): -Uninstall [-Purge]  -NoTray  -Port N
+# Options (when run as a file): -Uninstall [-Purge]  -NoTray  -NoWait  -Port N
 # Env: CODEX_OS3_SRC=<local checkout>, CODEX_OS3_REF=<branch|tag>
-param([switch]$Uninstall, [switch]$Purge, [switch]$NoTray, [int]$Port = 0)
+param([switch]$Uninstall, [switch]$Purge, [switch]$NoTray, [switch]$NoWait, [int]$Port = 0)
 $ErrorActionPreference = "Stop"
 
 $Repo = "Nesbesss/codex-os3"
@@ -118,6 +118,7 @@ if (-not $NoTray) {
 }
 
 & $Py -m codex_os3 setup-info
+if ($NoWait) { Pop-Location; exit 0 }
 Start-Process "http://localhost:$Port/#setup"
 Write-Host "Waiting for OS3 to connect… (save the connection in OS3 and send it a message; Ctrl-C to skip)"
 & $Py -m codex_os3 wait-for-os3 1800 | Out-Null

@@ -11,7 +11,7 @@ Rules decide; the optional Jev advisor (jev.py) only adds a second opinion for t
 ambiguous "is this silence expected?" case and is recorded alongside."""
 import json, time, urllib.request
 
-from . import config, jev, os3, store
+from . import config, jev, os3, platform_util, store
 
 TICK_S = 15
 QUIET_S = 120                 # silence after a quick tool call before we suspect the tunnel
@@ -151,12 +151,26 @@ def tick(cfg):
     return findings
 
 
+def _owner(me):
+    """Only one watchdog runs, even while two workers overlap during a reload: the owner
+    renews a lease; a newer worker takes over once the old lease is stale or released."""
+    import os
+    lease = store.kv_get("watchdog_owner") or {}
+    now = time.time()
+    if lease.get("pid") in (None, me) or now - lease.get("ts", 0) > TICK_S * 3 \
+            or lease.get("pid") != me and not platform_util.pid_alive(lease.get("pid")):
+        store.kv_set("watchdog_owner", {"pid": me, "ts": now, "boot": os.environ.get("CODEX_OS3_SUPERVISOR")})
+        return True
+    return False
+
+
 def loop(stop):
-    last_prune = 0
+    import os
+    me, last_prune = os.getpid(), 0
     while not stop.is_set():
         cfg = config.load()
         try:
-            if cfg.get("watchdog", True):
+            if cfg.get("watchdog", True) and _owner(me):
                 tick(cfg)
             if time.time() - last_prune > 3600:
                 store.prune(cfg["retention_days"])
