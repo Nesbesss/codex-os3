@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>codex-os3</title>
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZXgtb3MzIj4KICA8IS0tIG9yaWdpbmFsIG1hcms6IGEgdGVybWluYWwgcHJvbXB0ICg+Xykgd2hvc2UgY3Vyc29yIGJyYW5jaGVzIG9mZiBsaWtlIGEgcm91dGVyIC0tPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMxZjJhNDQiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMGIwZjFhIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJpbmsiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4MT0iMjQwIiB5MT0iMzQwIiB4Mj0iNzAwIiB5Mj0iNzAwIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2M5ZDZmZiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3QgeD0iNjQiIHk9IjY0IiB3aWR0aD0iODk2IiBoZWlnaHQ9Ijg5NiIgcng9IjIwMCIgZmlsbD0idXJsKCNiZykiLz4KICA8cmVjdCB4PSI2NC41IiB5PSI2NC41IiB3aWR0aD0iODk1IiBoZWlnaHQ9Ijg5NSIgcng9IjE5OS41IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS1vcGFjaXR5PSIuMDgiLz4KICA8IS0tIGNoZXZyb24gPiAtLT4KICA8cGF0aCBkPSJNMjU4IDM1MiBMNDM4IDUxMiBMMjU4IDY3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2luaykiIHN0cm9rZS13aWR0aD0iNzYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gY3Vyc29yIF8gdGhhdCByb3V0ZXM6IG9uZSBsaW5lIHNwbGl0dGluZyBpbnRvIHR3byBvdXRwdXRzIC0tPgogIDxwYXRoIGQ9Ik00ODggNjcyIEg2MjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNpbmspIiBzdHJva2Utd2lkdGg9Ijc2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNjI4IDY3MiBDNjg4IDY3MiA3MDAgNTcyIDc3MCA1NzIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzZlYThmZiIgc3Ryb2tlLXdpZHRoPSI0NCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTYyOCA2NzIgQzY4OCA2NzIgNzAwIDc3MiA3NzAgNzcyIiBmaWxsPSJub25lIiBzdHJva2U9IiNhOGM4ZmYiIHN0cm9rZS13aWR0aD0iNDQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9Ijc3NiIgY3k9IjU3MiIgcj0iMzQiIGZpbGw9IiM2ZWE4ZmYiLz4KICA8Y2lyY2xlIGN4PSI3NzYiIGN5PSI3NzIiIHI9IjM0IiBmaWxsPSIjYThjOGZmIi8+Cjwvc3ZnPgo=">
 <style>
 :root {
   color-scheme: light;
@@ -66,6 +67,11 @@ button.primary { background: var(--accent); color: #fff; border-color: transpare
 label.f { display: grid; gap: 4px; margin-bottom: 12px; font-size: 13px; color: var(--ink-2); }
 label.f input, label.f select { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--ring);
   background: var(--surface); color: var(--ink); max-width: 420px; }
+.rolegrid { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 10px 12px; align-items: start; margin: 6px 0 4px; }
+.rolegrid .rl { font-weight: 600; padding-top: 7px; } .rolegrid .desc { grid-column: 2 / 4; margin-top: -6px; }
+.rolegrid select { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--ring); background: var(--surface); color: var(--ink); width: 100%; }
+@media (max-width: 600px) { .rolegrid { grid-template-columns: 1fr; } .rolegrid .desc { grid-column: auto; } }
+.roles-tbl td:first-child { text-transform: capitalize; }
 .check { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
 .lvl-error { color: var(--crit); font-weight: 600; } .lvl-warn { color: #b07800; font-weight: 600; }
 details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-top: 8px; }
@@ -77,7 +83,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
 </head>
 <body>
 <header>
-  <h1>codex-os3 <span class="ver" id="ver"></span></h1>
+  <h1 style="display:flex;align-items:center;gap:8px"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZXgtb3MzIj4KICA8IS0tIG9yaWdpbmFsIG1hcms6IGEgdGVybWluYWwgcHJvbXB0ICg+Xykgd2hvc2UgY3Vyc29yIGJyYW5jaGVzIG9mZiBsaWtlIGEgcm91dGVyIC0tPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMxZjJhNDQiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMGIwZjFhIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJpbmsiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4MT0iMjQwIiB5MT0iMzQwIiB4Mj0iNzAwIiB5Mj0iNzAwIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2M5ZDZmZiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3QgeD0iNjQiIHk9IjY0IiB3aWR0aD0iODk2IiBoZWlnaHQ9Ijg5NiIgcng9IjIwMCIgZmlsbD0idXJsKCNiZykiLz4KICA8cmVjdCB4PSI2NC41IiB5PSI2NC41IiB3aWR0aD0iODk1IiBoZWlnaHQ9Ijg5NSIgcng9IjE5OS41IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS1vcGFjaXR5PSIuMDgiLz4KICA8IS0tIGNoZXZyb24gPiAtLT4KICA8cGF0aCBkPSJNMjU4IDM1MiBMNDM4IDUxMiBMMjU4IDY3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2luaykiIHN0cm9rZS13aWR0aD0iNzYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gY3Vyc29yIF8gdGhhdCByb3V0ZXM6IG9uZSBsaW5lIHNwbGl0dGluZyBpbnRvIHR3byBvdXRwdXRzIC0tPgogIDxwYXRoIGQ9Ik00ODggNjcyIEg2MjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNpbmspIiBzdHJva2Utd2lkdGg9Ijc2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNjI4IDY3MiBDNjg4IDY3MiA3MDAgNTcyIDc3MCA1NzIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzZlYThmZiIgc3Ryb2tlLXdpZHRoPSI0NCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTYyOCA2NzIgQzY4OCA2NzIgNzAwIDc3MiA3NzAgNzcyIiBmaWxsPSJub25lIiBzdHJva2U9IiNhOGM4ZmYiIHN0cm9rZS13aWR0aD0iNDQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9Ijc3NiIgY3k9IjU3MiIgcj0iMzQiIGZpbGw9IiM2ZWE4ZmYiLz4KICA8Y2lyY2xlIGN4PSI3NzYiIGN5PSI3NzIiIHI9IjM0IiBmaWxsPSIjYThjOGZmIi8+Cjwvc3ZnPgo=" width="24" height="24" alt="">codex-os3 <span class="ver" id="ver"></span></h1>
   <nav role="tablist">
     <button data-tab="dash" aria-selected="true">Dashboard</button>
     <button data-tab="setup">Setup</button>
@@ -137,7 +143,14 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
 </section>
 
 <section id="settings" hidden>
-  <div class="card" style="max-width:640px">
+  <div class="card" style="max-width:760px">
+    <h2>Models</h2>
+    <p class="muted">Like OS3's own model picker: OS3's local mode sends one model for everything, so the router recognises who is asking and uses the model you set here. <b>Small</b> is the main chat you talk to, <b>Standard</b> runs the workers that carry out tasks (shell, files, computer use), <b>Background</b> handles memory and review calls, which run often, so a light model saves limit.</p>
+    <label class="check"><input type="checkbox" id="routing"> Pick a model per role</label>
+    <div id="rolegrid" class="rolegrid"></div>
+    <div class="row"><button class="btn primary" id="saveroles">Save models</button><span class="muted" id="rolesmsg"></span></div>
+  </div>
+  <div class="card" style="max-width:640px;margin-top:14px">
     <h2>Settings</h2>
     <form id="cfg"></form>
     <div class="row"><button class="btn primary" id="save">Save</button><span class="muted" id="savemsg"></span></div>
@@ -148,6 +161,8 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
 
 <script>
 const $ = (s) => document.querySelector(s);
+const ROLE_LABEL = {chat: "Small", worker: "Standard", background: "Background"};
+const ROLE_HINT = {chat: "main chat", worker: "workers", background: "memory & review"};
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtN = (n) => n == null ? "–" : n >= 1e9 ? (n/1e9).toFixed(1)+"B" : n >= 1e6 ? (n/1e6).toFixed(1)+"M" : n >= 1e3 ? (n/1e3).toFixed(1)+"K" : String(n);
 const fmtT = (t) => t ? new Date(t*1000).toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"}) : "–";
@@ -211,13 +226,15 @@ async function dash(st) {
   const u = await api("usage?hours=" + $("#range").value);
   const today = await api("usage?hours=" + ((Date.now() - new Date().setHours(0,0,0,0))/3600000));
   const T = today.total;
-  $("#tok").innerHTML = `<div class="big">${fmtN(T.i)}</div><p class="muted">input (${T.i ? Math.round(100*T.c/T.i) : 0}% cached) · output ${fmtN(T.o)} · ${T.n} requests</p>`;
+  const rolesTbl = (today.by_role || []).filter(r => r.role !== "?").map(r => `<tr><td>${esc(ROLE_LABEL[r.role] || r.role)}</td><td class="num">${fmtN(r.i)}</td><td class="num">${r.n}</td></tr>`).join("");
+  $("#tok").innerHTML = `<div class="big">${fmtN(T.i)}</div><p class="muted">input (${T.i ? Math.round(100*T.c/T.i) : 0}% cached) · output ${fmtN(T.o)} · ${T.n} requests</p>` +
+    (rolesTbl ? `<table class="roles-tbl"><tr><th>role</th><th class="num">input</th><th class="num">calls</th></tr>${rolesTbl}</table>` : "");
   chart(u);
   const rs = await api("requests?limit=40");
-  $("#reqs").innerHTML = `<table><tr><th>time</th><th>kind</th><th>result</th><th class="num">duration</th><th class="num">input</th><th class="num">output</th><th>status</th></tr>${rs.map(r => {
+  $("#reqs").innerHTML = `<table><tr><th>time</th><th>role · model</th><th>result</th><th class="num">duration</th><th class="num">input</th><th class="num">output</th><th>status</th></tr>${rs.map(r => {
     const calls = r.calls ? JSON.parse(r.calls).join(", ") : ""; const dur = r.done_ts ? (r.done_ts - r.ts).toFixed(0) + "s" : "…";
     const cls = r.status === "ok" ? "ok" : r.status === "running" ? "" : "bad";
-    return `<tr><td>${fmtT(r.ts)}</td><td>${r.tools ? "agent" : "chat"} · ${esc(r.mode || "")}</td><td>${esc(r.result || "")} ${esc(calls).slice(0,80)}</td><td class="num">${dur}</td><td class="num">${fmtN(r.in_tok)}</td><td class="num">${fmtN(r.out_tok)}</td><td class="${cls}">${esc(r.status)}${r.error ? " · " + esc(r.error).slice(0,80) : ""}</td></tr>`; }).join("")}</table>`;
+    return `<tr><td>${fmtT(r.ts)}</td><td>${esc(ROLE_LABEL[r.role] || r.role || "")} · ${esc((r.model || "").replace(/-(low|medium|high|xhigh|max|ultra)$/, " $1"))}<br><span class="muted">${esc(r.mode || "")}</span></td><td>${esc(r.result || "")} ${esc(calls).slice(0,80)}</td><td class="num">${dur}</td><td class="num">${fmtN(r.in_tok)}</td><td class="num">${fmtN(r.out_tok)}</td><td class="${cls}">${esc(r.status)}${r.error ? " · " + esc(r.error).slice(0,80) : ""}</td></tr>`; }).join("")}</table>`;
 }
 
 async function setup(st) {
@@ -246,8 +263,6 @@ async function tasks() {
 }
 
 const FIELDS = [
-  ["model", "Default model", "select", ["gpt-6-luna","gpt-6-luna-high","gpt-5.6-luna","gpt-5.6-luna-high","gpt-5.5"], "gpt-5.6-luna reads screenshots more precisely; gpt-6-luna is the cleaner agent."],
-  ["effort", "Reasoning effort", "select", ["low","medium","high","xhigh"], "Higher is slower and uses more of your limit."],
   ["watchdog", "Watchdog", "bool", null, "Detects a dead rabbit-agent tunnel, limits and stuck tasks."],
   ["restart_agent", "Let the watchdog restart a stuck rabbit-agent", "bool"],
   ["jev_key", "TypeSafe Jev key (optional)", "password", null, "Gives the watchdog a second opinion on ambiguous situations."],
@@ -256,8 +271,24 @@ const FIELDS = [
   ["retention_days", "Keep history (days)", "number"],
   ["bind", "Listen on", "select", ["127.0.0.1","0.0.0.0"], "0.0.0.0 exposes the router on your network (API key still required). Needs a service restart."],
 ];
+let MODELS = [];
 async function settings() {
   const c = await api("config");
+  MODELS = await api("models");
+  $("#routing").checked = c.role_routing !== false;
+  const opt = (sel) => MODELS.map(m => `<option value="${esc(m.slug)}" ${m.slug === sel ? "selected" : ""}>${esc(m.name)}</option>`).join("")
+    + (MODELS.some(m => m.slug === sel) ? "" : `<option value="${esc(sel)}" selected>${esc(sel)} (not offered by this Codex account)</option>`);
+  $("#rolegrid").innerHTML = ["chat", "worker", "background"].map(r => {
+    const cur = (c.roles || {})[r] || {model: c.model, effort: c.effort};
+    return `<span class="rl">${ROLE_LABEL[r]}<br><span class="muted" style="font-weight:400">${ROLE_HINT[r]}</span></span><select data-role="${r}" data-k="model">${opt(cur.model)}</select><select data-role="${r}" data-k="effort" data-cur="${esc(cur.effort)}"></select><span class="muted desc" data-desc="${r}"></span>`;
+  }).join("");
+  const sync = (r) => {
+    const m = MODELS.find(x => x.slug === $(`select[data-role="${r}"][data-k="model"]`).value) || {efforts: ["low","medium","high"], default_effort: "medium", description: ""};
+    const eSel = $(`select[data-role="${r}"][data-k="effort"]`), want = eSel.value || eSel.dataset.cur;
+    eSel.innerHTML = m.efforts.map(e => `<option ${e === (m.efforts.includes(want) ? want : m.default_effort) ? "selected" : ""}>${e}</option>`).join("");
+    $(`[data-desc="${r}"]`).textContent = m.description;
+  };
+  ["chat", "worker", "background"].forEach(r => { sync(r); $(`select[data-role="${r}"][data-k="model"]`).onchange = () => sync(r); });
   $("#cfg").innerHTML = FIELDS.map(([k, label, type, opts, help]) => {
     const h = help ? `<span class="muted">${help}</span>` : "";
     if (type === "bool") return `<label class="check"><input type="checkbox" name="${k}" ${c[k] ? "checked" : ""}> ${label}</label>${help ? `<p class="muted" style="margin:-6px 0 12px 26px">${help}</p>` : ""}`;
@@ -266,6 +297,14 @@ async function settings() {
     return `<label class="f">${label}<input type="${type}" name="${k}" value="${esc(c[k])}">${h}</label>`;
   }).join("");
 }
+$("#saveroles").onclick = async () => {
+  const roles = {};
+  ["chat", "worker", "background"].forEach(r => roles[r] = {
+    model: $(`select[data-role="${r}"][data-k="model"]`).value, effort: $(`select[data-role="${r}"][data-k="effort"]`).value});
+  await post("config", {roles, role_routing: $("#routing").checked});
+  $("#rolesmsg").textContent = "Saved. Used from the next request on.";
+  toast("Models saved");
+};
 $("#save").onclick = async () => {
   const out = {};
   FIELDS.forEach(([k, , type]) => { const el = $("#cfg").elements[k]; if (!el) return;

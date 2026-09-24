@@ -90,8 +90,10 @@ class Handler(BaseHTTPRequestHandler):
         cfg = config.load()
         path = self.path.split("?")[0].rstrip("/")
         if path in ("/v1/models", "/models"):
+            from . import roles
+            ids = list(dict.fromkeys(cfg["models"] + [m["slug"] for m in roles.available_models()]))
             return self.send(200, {"object": "list", "data": [
-                {"id": m, "object": "model", "created": 0, "owned_by": "codex"} for m in cfg["models"]]})
+                {"id": m, "object": "model", "created": 0, "owned_by": "codex"} for m in ids]})
         if path in ("/health", "/v1"):
             return self.send(200, {"status": "ok", "version": __version__, "pid": os.getpid()})
         if path == "/login":  # remote dashboard access: /login?key=<api key> sets a cookie
@@ -179,7 +181,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             return self.send(502, err)
 
-        cid, created, model = f"chatcmpl-{uuid.uuid4().hex[:24]}", int(time.time()), turn.model
+        cid, created, model = f"chatcmpl-{uuid.uuid4().hex[:24]}", int(time.time()), turn.requested
         if stream:
             first = {"role": "assistant"}
             if msg.get("tool_calls"):

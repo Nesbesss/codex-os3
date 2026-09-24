@@ -1,12 +1,27 @@
 """JSON API behind the web UI. handle() -> (status, body, content_type)."""
 import os, re, shutil, subprocess, time
 
-from . import __version__, config, export, os3, store
+from . import __version__, config, export, os3, roles, store
 from .platform_util import pid_alive
 
 J = "application/json"
 EDITABLE = {"model", "effort", "bind", "port", "captures", "retention_days", "jev_key",
-            "webhook", "watchdog", "restart_agent", "max_codex", "max_images"}
+            "webhook", "watchdog", "restart_agent", "max_codex", "max_images", "role_routing", "roles"}
+
+
+def clean_roles(value):
+    """Only known roles with a model slug and an effort that model supports."""
+    known = {m["slug"]: m for m in roles.available_models()}
+    out = {}
+    for role in roles.ROLES:
+        r = (value or {}).get(role) or {}
+        model = str(r.get("model", ""))
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", model):
+            continue
+        efforts = known.get(model, {}).get("efforts") or ["low", "medium", "high", "xhigh", "max", "ultra"]
+        effort = r.get("effort") if r.get("effort") in efforts else known.get(model, {}).get("default_effort", "medium")
+        out[role] = {"model": model, "effort": effort}
+    return out
 
 
 MIN_CODEX = "0.155.0"  # older CLIs reject the current models ("requires a newer version of Codex")
@@ -66,7 +81,9 @@ def usage(hours):
         "FROM requests WHERE ts>? GROUP BY t ORDER BY t", (since,))
     tot = store.q("SELECT COUNT(*) n, SUM(COALESCE(in_tok,0)) i, SUM(COALESCE(cached_tok,0)) c, "
                   "SUM(COALESCE(out_tok,0)) o FROM requests WHERE ts>?", (since,))[0]
-    return {"bucket": bucket, "series": rows, "total": tot}
+    by_role = store.q("SELECT COALESCE(role,'?') role, COUNT(*) n, SUM(COALESCE(in_tok,0)) i, "
+                      "SUM(COALESCE(out_tok,0)) o FROM requests WHERE ts>? GROUP BY role ORDER BY i DESC", (since,))
+    return {"bucket": bucket, "series": rows, "total": tot, "by_role": by_role}
 
 
 def handle(method, path, data, q, cfg):
@@ -81,7 +98,7 @@ def handle(method, path, data, q, cfg):
     if method == "GET" and path == "usage":
         return 200, usage(float(q.get("hours", 24))), J
     if method == "GET" and path == "requests":
-        rows = store.q("SELECT id, ts, done_ts, task, model, stream, tools, msgs, bytes, imgs, mode, status, "
+        rows = store.q("SELECT id, ts, done_ts, task, model, role, stream, tools, msgs, bytes, imgs, mode, status, "
                        "error, result, calls, in_tok, cached_tok, out_tok FROM requests ORDER BY ts DESC LIMIT ?",
                        (int(q.get("limit", 100)),))
         return 200, rows, J
@@ -96,6 +113,8 @@ def handle(method, path, data, q, cfg):
         if not re.fullmatch(r"[0-9a-f]{8,40}", task):
             return 400, {"error": "bad task id"}, J
         return 200, export.build(task, cfg), "application/zip"
+    if method == "GET" and path == "models":
+        return 200, roles.available_models(), J
     if method == "GET" and path == "doctor":
         return 200, doctor(cfg), J
     if method == "GET" and path == "config":
@@ -104,6 +123,8 @@ def handle(method, path, data, q, cfg):
         return 200, c, J  # api_key is shown: the UI is local-only or key-authenticated
     if method == "POST" and path == "config":
         upd = {k: v for k, v in data.items() if k in EDITABLE}
+        if "roles" in upd:
+            upd["roles"] = dict(cfg.get("roles") or {}, **clean_roles(upd["roles"]))
         if "jev_key" in upd and upd["jev_key"] is True:
             upd.pop("jev_key")  # UI echoes the masked boolean back; keep the stored key
         new = config.save(upd)

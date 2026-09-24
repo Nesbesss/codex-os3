@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="codex-os3">
+  <!-- original mark: a terminal prompt (>_) whose cursor branches off like a router -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f2a44"/>
+      <stop offset="1" stop-color="#0b0f1a"/>
+    </linearGradient>
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="240" y1="340" x2="700" y2="700">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c9d6ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <rect x="64.5" y="64.5" width="895" height="895" rx="199.5" fill="none" stroke="#ffffff" stroke-opacity=".08"/>
+  <!-- chevron > -->
+  <path d="M258 352 L438 512 L258 672" fill="none" stroke="url(#ink)" stroke-width="76" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- cursor _ that routes: one line splitting into two outputs -->
+  <path d="M488 672 H628" fill="none" stroke="url(#ink)" stroke-width="76" stroke-linecap="round"/>
+  <path d="M628 672 C688 672 700 572 770 572" fill="none" stroke="#6ea8ff" stroke-width="44" stroke-linecap="round"/>
+  <path d="M628 672 C688 672 700 772 770 772" fill="none" stroke="#a8c8ff" stroke-width="44" stroke-linecap="round"/>
+  <circle cx="776" cy="572" r="34" fill="#6ea8ff"/>
+  <circle cx="776" cy="772" r="34" fill="#a8c8ff"/>
+</svg>

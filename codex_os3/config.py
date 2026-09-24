@@ -11,6 +11,12 @@ DEFAULTS = {
     "model": "gpt-6-luna",
     "models": ["gpt-6-luna", "gpt-6-luna-high", "gpt-5.6-luna", "gpt-5.6-luna-high", "gpt-5.5"],
     "effort": "medium",
+    "role_routing": True,     # pick the model per OS3 role instead of the one OS3 sends
+    "roles": {
+        "chat": {"model": "gpt-6-luna", "effort": "medium"},
+        "worker": {"model": "gpt-6-sol", "effort": "medium"},
+        "background": {"model": "gpt-6-luna", "effort": "low"},
+    },
     "codex_bin": "",          # absolute path to codex (services often lack the user's PATH)
     "max_codex": 3,           # concurrent codex processes
     "max_images": 2,          # newest screenshots attached per turn

@@ -7,7 +7,7 @@ main codex call (resumed session when possible, one fresh retry on failure/hang)
   -> tool-call repair (JSON, node ids, dlam scripts, missing feed_image)."""
 import json, os, time, uuid
 
-from . import codex_runner, config, prompt as P, repair, sessions, store
+from . import codex_runner, config, prompt as P, repair, roles, sessions, store
 from .codex_runner import ClientGone, CodexHung, UsageLimit
 
 
@@ -24,7 +24,9 @@ class Turn:
 
     def __init__(self, cfg, body, alive, source="?"):
         self.cfg, self.body, self.alive, self.source = cfg, body, alive, source
-        self.model = body.get("model") or cfg["model"]
+        self.role = roles.classify(body)
+        self.requested = body.get("model") or cfg["model"]
+        self.model = roles.pick(cfg, self.role, self.requested)  # what codex runs, e.g. gpt-6-sol-medium
         self.msgs = body.get("messages") or []
         tools = body.get("tools") or []
         if body.get("functions"):  # legacy shape
@@ -36,7 +38,7 @@ class Turn:
         self.node_src = "\n".join(P.text_of(m.get("content")) for m in self.msgs
                                   if m.get("role") == "system")
         self.rid = store.request_start(self.task, source, self.model, bool(body.get("stream")),
-                                       len(tools), len(self.msgs), len(json.dumps(body)))
+                                       len(tools), len(self.msgs), len(json.dumps(body)), self.role)
         self.tid = None
 
     def ev(self, kind, msg, level="info", data=None):

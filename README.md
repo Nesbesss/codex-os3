@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon-256.png" width="128" alt="codex-os3"></p>
+
 # codex-os3
 
 Use your **Codex / ChatGPT subscription** as the LLM for **rabbit OS3**: chat, tool calling,
@@ -42,6 +44,18 @@ Then, in OS3 go to **Settings → API keys**, provider **local**, and enter:
 | model id | `gpt-6-luna` (see [Models](#models)) |
 | api key | shown by the installer and on the setup page |
 | context window (advanced) | `200000` |
+
+**Pick models per role.** OS3's local mode only lets you set one model, but the router knows who is
+asking, so you can choose a model for each role in the dashboard (Settings → Models), like OS3's picker
+for cloud providers:
+
+| role | used for | default |
+|---|---|---|
+| **Small** | the main chat you talk to | `gpt-6-luna` · medium |
+| **Standard** | workers that carry out tasks (shell, files, computer use) | `gpt-6-sol` · medium |
+| **Background** | memory, fact extraction and reply review (frequent, light) | `gpt-6-luna` · low |
+
+The list comes from your Codex account, so new models show up by themselves. The dashboard shows token use per role.
 
 **Several nodes?** Install the router on **one** machine, ideally the one that is always on, and
 pick it as the LLM device. Tasks still run on every node. No Tailscale, ngrok, or open ports are needed,
@@ -97,6 +111,9 @@ lines, never your messages or screenshots. Rules stay in charge: Jev can only es
 | `gpt-6-luna` | default: clean tool calls, rarely asks unnecessary questions. **Can misread digits in screenshots** (e.g. 226295 → 26295), so double-check exact numbers |
 | `gpt-5.6-luna` | reads screens more precisely; makes more invalid calls (fixed by the router) and asks for permission more often |
 | `…-high` | more reasoning: slower, and uses more of your limit |
+
+The logo is an original mark (a terminal prompt whose cursor branches into two routes); codex-os3 is not
+affiliated with or endorsed by OpenAI or rabbit.
 
 ## Privacy and security
 

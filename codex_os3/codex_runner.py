@@ -41,7 +41,7 @@ def slots(n):
 
 
 def split_model(model, default_effort):
-    for e in ("-xhigh", "-high", "-medium", "-low", "-minimal"):
+    for e in ("-xhigh", "-ultra", "-max", "-high", "-medium", "-low", "-minimal"):
         if model.endswith(e):
             return model[:-len(e)], e[1:]
     return model, default_effort

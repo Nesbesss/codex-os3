@@ -11,7 +11,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS requests (
   id INTEGER PRIMARY KEY, ts REAL, done_ts REAL, task TEXT, source TEXT, model TEXT,
   stream INT, tools INT, msgs INT, bytes INT, imgs INT, mode TEXT, status TEXT, error TEXT,
-  result TEXT, calls TEXT, in_tok INT, cached_tok INT, out_tok INT, reason_tok INT);
+  result TEXT, calls TEXT, in_tok INT, cached_tok INT, out_tok INT, reason_tok INT, role TEXT);
 CREATE INDEX IF NOT EXISTS req_ts ON requests(ts);
 CREATE INDEX IF NOT EXISTS req_task ON requests(task);
 CREATE TABLE IF NOT EXISTS limits (
@@ -38,6 +38,9 @@ def db():
             try:
                 c.execute("PRAGMA journal_mode=WAL")
                 c.executescript(SCHEMA)
+                cols = {r[1] for r in c.execute("PRAGMA table_info(requests)")}
+                if "role" not in cols:  # databases from 0.1.0
+                    c.execute("ALTER TABLE requests ADD COLUMN role TEXT")
                 break
             except sqlite3.OperationalError:
                 time.sleep(0.2 * (attempt + 1))
@@ -56,10 +59,10 @@ def q(sql, args=()):
 
 # -- requests -----------------------------------------------------------------
 
-def request_start(task, source, model, stream, tools, msgs, nbytes):
-    return _w("INSERT INTO requests(ts,task,source,model,stream,tools,msgs,bytes,status) "
-              "VALUES(?,?,?,?,?,?,?,?,'running')",
-              (time.time(), task, source, model, int(stream), tools, msgs, nbytes)).lastrowid
+def request_start(task, source, model, stream, tools, msgs, nbytes, role=None):
+    return _w("INSERT INTO requests(ts,task,source,model,stream,tools,msgs,bytes,status,role) "
+              "VALUES(?,?,?,?,?,?,?,?,'running',?)",
+              (time.time(), task, source, model, int(stream), tools, msgs, nbytes, role)).lastrowid
 
 
 def request_end(rid, **f):

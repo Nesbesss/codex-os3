@@ -129,6 +129,34 @@ class Sessions(unittest.TestCase):
         self.assertIsNone(store.session_get(k))
 
 
+class Roles(unittest.TestCase):
+    def body(self, tools, system="You are an assistant."):
+        return {"tools": [{"type": "function", "function": {"name": n}} for n in tools],
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": "x"}]}
+
+    def test_classify(self):
+        from codex_os3 import roles
+        self.assertEqual(roles.classify(self.body(["create_task", "notify_before_act", "wait"])), "chat")
+        self.assertEqual(roles.classify(self.body(["shell", "computer_use"], "You are a worker agent in OS3.")), "worker")
+        self.assertEqual(roles.classify(self.body(["report_missed_action", "report_correction", "wait"])), "background")
+        self.assertEqual(roles.classify(self.body(["emit_facts"])), "background")
+        self.assertEqual(roles.classify(self.body([])), "background")
+        self.assertEqual(roles.classify(self.body(["ping"])), "chat")  # OS3's connection probe
+
+    def test_pick(self):
+        from codex_os3 import roles
+        cfg = {"model": "gpt-6-luna", "effort": "medium", "role_routing": True,
+               "roles": {"worker": {"model": "gpt-6-sol", "effort": "high"}}}
+        self.assertEqual(roles.pick(cfg, "worker", "gpt-6-luna"), "gpt-6-sol-high")
+        self.assertEqual(roles.pick(cfg, "chat", "gpt-6-luna"), "gpt-6-luna-medium")
+        self.assertEqual(roles.pick(dict(cfg, role_routing=False), "worker", "gpt-5.5"), "gpt-5.5")
+
+    def test_split_effort(self):
+        from codex_os3.codex_runner import split_model
+        self.assertEqual(split_model("gpt-6-sol-ultra", "medium"), ("gpt-6-sol", "ultra"))
+        self.assertEqual(split_model("gpt-6-luna", "medium"), ("gpt-6-luna", "medium"))
+
+
 class Export(unittest.TestCase):
     def test_redaction(self):
         t = export.redact('Authorization: Bearer abcdefghijklmnop "password": "hunter2secret" '
