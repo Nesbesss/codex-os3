@@ -57,7 +57,14 @@ jobs:
           $cfg = Get-Content "$env:USERPROFILE/.codex-os3/config.json" -Raw | ConvertFrom-Json
           $h = @{ Authorization = "Bearer $($cfg.api_key)" }
           $body = '{"messages":[{"role":"user","content":"hi"}]}'
-          $r = Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/v1/chat/completions" -Method Post -Headers $h -Body $body -ContentType "application/json"
+          try { $r = Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/v1/chat/completions" -Method Post -Headers $h -Body $body -ContentType "application/json" }
+          catch {
+            Write-Host "BODY: $($_.ErrorDetails.Message)"
+            Get-NetTCPConnection -LocalPort $cfg.port -State Listen | Format-Table -AutoSize | Out-String | Write-Host
+            Get-CimInstance Win32_Process -Filter "Name like 'python%'" | Select-Object ProcessId, CommandLine | Format-List | Out-String | Write-Host
+            Get-Content "$env:USERPROFILE/.codex-os3/service.log" -ErrorAction SilentlyContinue
+            throw
+          }
           if ($r.choices[0].message.content -notlike "*fake codex*") { throw "chat failed: $($r | ConvertTo-Json -Depth 5)" }
           $before = (Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/health").pid
           Push-Location "$env:USERPROFILE/.codex-os3/app"; python -m codex_os3 reload; Pop-Location
