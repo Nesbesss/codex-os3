@@ -1,5 +1,5 @@
 """HTTP worker: the OpenAI-compatible API for OS3 plus the local web UI and its JSON API."""
-import json, os, select, signal, socket, threading, time, uuid
+import hmac, json, os, select, signal, socket, threading, time, urllib.parse, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import __version__, config, engine, store, ui_api
@@ -33,14 +33,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def api_key_ok(self, cfg):
         got = self.headers.get("Authorization", "")
-        return bool(cfg["api_key"]) and got == f"Bearer {cfg['api_key']}"
+        return bool(cfg["api_key"]) and hmac.compare_digest(got, f"Bearer {cfg['api_key']}")
 
     def ui_ok(self, cfg):
         """UI/API: always from this machine; remotely only with the key (header or cookie)."""
         if self.local():
             return True
-        cookie = self.headers.get("Cookie", "")
-        return self.api_key_ok(cfg) or f"cxos3={cfg['api_key']}" in cookie
+        cookies = dict(c.strip().split("=", 1) for c in self.headers.get("Cookie", "").split(";") if "=" in c)
+        return self.api_key_ok(cfg) or (bool(cfg["api_key"]) and
+                                         hmac.compare_digest(cookies.get("cxos3", ""), cfg["api_key"]))
 
     def client_alive(self):
         try:
@@ -93,10 +94,17 @@ class Handler(BaseHTTPRequestHandler):
                 {"id": m, "object": "model", "created": 0, "owned_by": "codex"} for m in cfg["models"]]})
         if path in ("/health", "/v1"):
             return self.send(200, {"status": "ok", "version": __version__, "pid": os.getpid()})
+        if path == "/login":  # remote dashboard access: /login?key=<api key> sets a cookie
+            key = dict(p.split("=", 1) for p in self.path.split("?", 1)[-1].split("&") if "=" in p).get("key", "")
+            if not cfg["api_key"] or not hmac.compare_digest(urllib.parse.unquote(key), cfg["api_key"]):
+                return self.send(401, b"wrong key", "text/plain")
+            return self.send(302, b"", "text/plain", [
+                ("Location", "/"),
+                ("Set-Cookie", f"cxos3={cfg['api_key']}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000")])
         if path in ("", "/ui", "/index.html"):
             if not self.ui_ok(cfg):
                 return self.send(401, b"unauthorized: open this page on the router's machine, "
-                                 b"or send Authorization: Bearer <api key>", "text/plain")
+                                 b"or log in once with /login?key=<api key>", "text/plain")
             with open(os.path.join(UI_DIR, "index.html"), "rb") as f:
                 return self.send(200, f.read(), "text/html; charset=utf-8")
         if path.startswith("/api/"):

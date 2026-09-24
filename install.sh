@@ -37,15 +37,15 @@ if [ "$UNINSTALL" = 1 ]; then
   if [ "$OS" = Darwin ]; then
     launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
     rm -f "$PLIST"
-    for i in $(seq 1 30); do pgrep -f "codex_os3 (serve|worker)" >/dev/null || break; sleep 1; done
-    pkill -9 -f "codex_os3 (serve|worker)" 2>/dev/null || true
+    for i in $(seq 1 30); do pgrep -f -- "-m codex_os3 (serve|worker)" >/dev/null || break; sleep 1; done
+    pkill -9 -f -- "-m codex_os3 (serve|worker)" 2>/dev/null || true
     pkill -f "Codex OS3.app/Contents/MacOS/CodexOS3" 2>/dev/null || true
     rm -rf "$HOME/Applications/Codex OS3.app"
   else
     systemctl --user disable --now codex-os3 2>/dev/null || true
     rm -f "$UNIT"; systemctl --user daemon-reload 2>/dev/null || true
     { crontab -l 2>/dev/null | grep -v "codex-os3-keepalive" || true; } | crontab - 2>/dev/null || true
-    pkill -f "codex_os3 (serve|worker)" 2>/dev/null || true
+    pkill -f -- "-m codex_os3 (serve|worker)" 2>/dev/null || true
   fi
   rm -rf "$APP_DIR"
   [ "$PURGE" = 1 ] && rm -rf "$HOME_DIR" && ok "removed all data ($HOME_DIR)"

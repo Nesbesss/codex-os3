@@ -87,6 +87,20 @@ class Service(unittest.TestCase):
             self.api_post("key/rotate", header=False)  # CSRF guard
         self.assertEqual(e.exception.code, 403)
 
+    def test_remote_login_cookie(self):
+        req = urllib.request.Request(self.url("/login?key=cx-test"))
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *a, **k):
+                return None
+        with self.assertRaises(urllib.error.HTTPError) as e:
+            urllib.request.build_opener(NoRedirect).open(req, timeout=10)
+        self.assertEqual(e.exception.code, 302)
+        self.assertIn("cxos3=cx-test", e.exception.headers["Set-Cookie"])
+        self.assertIn("HttpOnly", e.exception.headers["Set-Cookie"])
+        with self.assertRaises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(self.url("/login?key=nope"), timeout=10)
+        self.assertEqual(e.exception.code, 401)
+
     def test_chat(self):
         d = self.post({"messages": [{"role": "user", "content": "hi"}]})
         self.assertIn("hello from fake codex", d["choices"][0]["message"]["content"])
