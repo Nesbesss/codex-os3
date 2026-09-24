@@ -26,7 +26,7 @@ def _spawn():
                             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def _healthy(cfg, pid, timeout=20):
+def _healthy(cfg, pid, timeout=40):
     """True once the worker with this pid answers /health (during a swap both workers
     listen on the port, so a plain 200 could come from the old one)."""
     host = "127.0.0.1" if cfg["bind"] in ("0.0.0.0", "::") else cfg["bind"]

@@ -156,7 +156,7 @@ class Service(unittest.TestCase):
         th.start()
         self.api_post("reload")
         pids, t = set(), time.time()
-        while time.time() - t < 20 and (not pids or pids == {before}):
+        while time.time() - t < 45 and (not pids or pids == {before}):
             try:
                 pids.add(self.get("/health")["pid"])
             except OSError:
@@ -164,7 +164,7 @@ class Service(unittest.TestCase):
             time.sleep(0.2)
         th.join(30)
         self.assertIn("d", res)
-        self.assertTrue(pids - {before}, "new worker never answered")
+        self.assertTrue(pids - {before}, "new worker never answered; service log:\n" + open(self.log.name).read()[-3000:])
 
 
 if __name__ == "__main__":

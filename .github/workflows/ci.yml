@@ -36,7 +36,7 @@ jobs:
           foreach ($f in "install.ps1", "app/windows/tray.ps1") {
             $errs = $null
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errs) | Out-Null
-            if ($errs) { $errs | ForEach-Object { Write-Error "$f: $_" }; exit 1 }
+            if ($errs) { $errs | ForEach-Object { Write-Error "${f}: $_" }; exit 1 }
           }
   macos-app:
     runs-on: macos-latest
