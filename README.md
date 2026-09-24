@@ -136,7 +136,7 @@ affiliated with or endorsed by OpenAI or rabbit.
 | you see | cause and fix |
 |---|---|
 | OS3: *"The device is offline or the local endpoint is unreachable"* when saving | the router must run on the **device you selected** in OS3, and the endpoint must be `http://localhost:11435/v1`. Check `codex-os3 doctor` on that machine. |
-| OS3: *"This model did not make a tool call"* when saving | fill in the **API key** field (it is not optional for this router), then save again |
+| OS3: *"This model did not make a tool call"* when saving | make sure the **API key** field holds the router's key and `codex-os3 doctor` is all ✓ (an outdated Codex CLI is the usual cause), then save again; the check is a live model call, so an occasional retry is normal |
 | OS3: *"Local LLM device can't be reached"* during tasks | the rabbit-agent's tunnel died; the watchdog restarts the agent automatically within ~2 min, or use *Restart rabbit-agent* in the dashboard / menu bar |
 | *"Codex usage limit reached — resets at …"* | your ChatGPT plan's 5-hour or weekly limit; the dashboard shows both. Use lighter models/effort per role to stretch it |
 | installer says *run this in Terminal on the Mac itself* | macOS services started over SSH lose their permissions; run it locally |
