@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1 (2026-09-24)
+- Per-role models: **Small** (main chat), **Standard** (workers), **Background** (memory/review), chosen in the
+  dashboard from the models your Codex account offers; token use per role
+- Only passes `--disable` flags the installed Codex knows; the installer updates a too-old Codex CLI
+- Fixed OS3's connection test failing now and then (the model thought OS3's tools were unavailable)
+- Watchdog runs inside the worker, so upgrades update it
+- Windows installer fixes found by CI (Python detection, console encoding, tray app port)
+- App icon
+
 ## 0.1.0 (2026-09-24)
 First public version, grown from a live prototype used with rabbit OS3.
 
