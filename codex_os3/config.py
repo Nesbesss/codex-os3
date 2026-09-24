@@ -9,7 +9,7 @@ DEFAULTS = {
     "bind": "127.0.0.1",      # rabbit relays via the local rabbit-agent; set 0.0.0.0 for remote use
     "api_key": "",
     "model": "gpt-6-luna",
-    "models": ["gpt-6-luna", "gpt-6-luna-high", "gpt-5.6-luna", "gpt-5.6-luna-high", "gpt-5.5"],
+    "models": ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra"],  # extra ids for /v1/models; the rest comes from Codex
     "effort": "medium",
     "role_routing": True,     # pick the model per OS3 role instead of the one OS3 sends
     "roles": {

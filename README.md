@@ -106,11 +106,27 @@ lines, never your messages or screenshots. Rules stay in charge: Jev can only es
 
 ## Models
 
-| model id | notes |
-|---|---|
-| `gpt-6-luna` | default: clean tool calls, rarely asks unnecessary questions. **Can misread digits in screenshots** (e.g. 226295 → 26295), so double-check exact numbers |
-| `gpt-5.6-luna` | reads screens more precisely; makes more invalid calls (fixed by the router) and asks for permission more often |
-| `…-high` | more reasoning: slower, and uses more of your limit |
+The dashboard's model selector lists exactly what **your** Codex account offers (read from Codex's own
+model list), so it may differ per account and changes when OpenAI adds models. Typical options:
+
+| model | Codex's description | good for |
+|---|---|---|
+| `gpt-6-luna` | Fast and affordable model for easier tasks | **Small** (main chat) and **Background**; clean tool calls |
+| `gpt-6-sol` | Workhorse model for coding and everyday work | **Standard** (workers): multi-step tasks, computer use |
+| `gpt-6-astra` | Frontier intelligence for the most demanding work | hard worker tasks; uses the most of your limit |
+| `gpt-5.6-luna` / `gpt-5.6-sol` / `gpt-5.5` | older generations | fallback |
+
+Each model offers its own **effort** levels (from `low` up to `max` or `ultra`); higher is slower and uses
+more of your 5-hour and weekly limits. Suggested starting point: Small = `gpt-6-luna` medium,
+Standard = `gpt-6-sol` medium, Background = `gpt-6-luna` low.
+
+What we measured with computer use (small sample, your mileage may vary): `gpt-6-luna` occasionally
+**misreads digits in screenshots** (226295 → 26295), while `gpt-5.6-luna` read them correctly. If a
+worker task depends on exact numbers from the screen, double-check them or use a stronger worker model.
+
+In OS3 itself, the model id you enter (e.g. `gpt-6-luna`) only matters when per-role models are switched
+off in the dashboard; then that one model is used for everything. Append an effort to it if you like,
+e.g. `gpt-6-sol-high`.
 
 The logo is an original mark (a terminal prompt whose cursor branches into two routes); codex-os3 is not
 affiliated with or endorsed by OpenAI or rabbit.
