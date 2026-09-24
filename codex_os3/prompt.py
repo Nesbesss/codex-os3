@@ -17,7 +17,14 @@ def claims_unavailable(content, tool_names):
         return True
     if not content or not _NEG.search(content):
         return False
-    return any(re.search(r"(?<![\w-])`?" + re.escape(n) + r"`?(?![\w-])", content) for n in tool_names if len(n) > 2)
+    for n in tool_names:
+        if len(n) <= 2:
+            continue
+        for m in re.finditer(r"(?<![\w-])`?" + re.escape(n) + r"`?(?![\w-])", content):
+            near = content[max(0, m.start() - 60):m.end() + 60]  # same clause, not anywhere in the answer
+            if _NEG.search(near):
+                return True
+    return False
 
 
 RETRY_NUDGE = (

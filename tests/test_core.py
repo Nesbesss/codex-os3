@@ -110,6 +110,9 @@ class Prompt(unittest.TestCase):
         self.assertFalse(P.claims_unavailable("Pinged it: the reply was pong.", names))          # no negation
         self.assertFalse(P.claims_unavailable("I can't find that file on your Mac.", names))       # no tool named
         self.assertFalse(P.claims_unavailable("Done, nothing else to do.", names))
+        long_ok = ("I ran shell to check the display server and everything is set up correctly; screenshots and "
+                   "input both work. There's no permission you need to enable.")
+        self.assertFalse(P.claims_unavailable(long_ok, names))
 
 
 class Sessions(unittest.TestCase):

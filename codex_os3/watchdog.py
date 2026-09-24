@@ -131,7 +131,7 @@ def tick(cfg):
     for f in findings:
         if f["action"] and resp.get("id") and acted_for == resp.get("id"):
             continue  # already handled this stalled reply; don't restart again for it
-        if _recent(f["kind"], DEDUPE_S) and f["action"] is None:
+        if f["action"] is None and _recent(f["kind"], 3 * 3600 if f["kind"] == "weekly_limit_high" else DEDUPE_S):
             continue
         acted = None
         if f["action"] == "restart_agent" and cfg.get("restart_agent"):

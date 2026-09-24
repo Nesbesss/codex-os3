@@ -143,15 +143,18 @@ class Turn:
                 raw, self.tid = r, t or self.tid
 
         problems = repair.decision_problems(P.parse_decision(raw) or {}, tools, node_src)
-        if problems:
+        for attempt in range(2):  # a broken call that reaches OS3 fails the step, so try twice
+            if not problems:
+                break
             note = P.VALIDATE_NUDGE.format(problems="\n".join("- " + p for p in problems[:8]))
             self.ev("invalid_calls", "; ".join(problems)[:300], "warn", {"problems": problems})
             r, t = self.extra("fix", note.strip(), prompt + "\n\nYour reply was: " + raw[:4000] + note, images.files)
-            if r:
-                left = repair.decision_problems(P.parse_decision(r) or {}, tools, node_src)
-                self.ev("fix_result", f"{len(problems)} -> {len(left)} problem(s)")
-                if len(left) < len(problems):
-                    raw, self.tid = r, t or self.tid
+            if not r:
+                break
+            left = repair.decision_problems(P.parse_decision(r) or {}, tools, node_src)
+            self.ev("fix_result", f"{len(problems)} -> {len(left)} problem(s)")
+            if len(left) < len(problems):
+                raw, self.tid, problems = r, t or self.tid, left
 
         d = P.parse_decision(raw) or {}
         if d.get("kind") == "final" and P.used_computer(self.msgs):
