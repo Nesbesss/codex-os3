@@ -2,3 +2,5 @@ _proto/
 __pycache__/
 *.pyc
 .DS_Store
+app/macos/.build/
+app/macos/build/
