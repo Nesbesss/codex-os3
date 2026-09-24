@@ -124,7 +124,7 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
             except OSError:
                 pass
 
-    text, err, usage = [], None, {}
+    text, errs, usage = [], [], {}
     for line in out:
         try:
             e = json.loads(line)
@@ -137,8 +137,8 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
             text.append(e["item"].get("text", ""))
         elif t == "turn.completed":
             usage = e.get("usage") or {}
-        elif t in ("error", "turn.failed"):
-            err = e.get("message") or json.dumps(e.get("error", ""))
+        elif t in ("error", "turn.failed"):  # keep all: the first one usually has the details
+            errs.append(e.get("message") or json.dumps(e.get("error", "")))
 
     limits = last_rate_limits(thread) if thread else None
     if thread and not keep and not resume:  # one-off call: don't leave history behind
@@ -148,7 +148,7 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
             except OSError:
                 pass
     if not text:
-        msg = err or ("\n".join(err_lines) or "no output from codex")[-600:]
+        msg = " | ".join(errs) or ("\n".join(err_lines) or "no output from codex")[-600:]
         if "usage limit" in msg.lower():
             m = RESET_RE.search(msg)
             raise UsageLimit(msg, m.group(1).strip() if m else "")

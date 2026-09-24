@@ -3,6 +3,7 @@ import json, os, select, signal, socket, threading, time, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import __version__, config, engine, store, ui_api
+from .platform_util import pid_alive
 
 UI_DIR = os.path.join(os.path.dirname(__file__), "ui")
 LOCAL = ("127.0.0.1", "::1", "::ffff:127.0.0.1")
@@ -222,8 +223,14 @@ def serve_worker():
     signal.signal(signal.SIGINT, on_term)
     drain_file = os.path.join(config.HOME, f"drain-{os.getpid()}")
 
-    def watch_drain():  # the supervisor's portable stop request
+    parent = os.environ.get("CODEX_OS3_SUPERVISOR")
+
+    def watch_drain():  # the supervisor's portable stop request, or the supervisor vanishing
         while not stopping.is_set():
+            if parent and not pid_alive(parent):  # killed hard (e.g. Task Scheduler "End")
+                engine.log(f"supervisor {parent} is gone, draining")
+                on_term()
+                return
             if os.path.exists(drain_file):
                 try:
                     os.unlink(drain_file)

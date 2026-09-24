@@ -1,0 +1,19 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  macos-app:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          test "v$(python3 -c 'import codex_os3; print(codex_os3.__version__)')" = "$GITHUB_REF_NAME"
+          app/macos/build.sh
+          ditto -c -k --keepParent "app/macos/build/Codex OS3.app" CodexOS3-macos.zip
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" CodexOS3-macos.zip --clobber

@@ -21,7 +21,8 @@ def drain(p):
 
 
 def _spawn():
-    return subprocess.Popen([sys.executable, "-m", "codex_os3", "worker"],
+    env = dict(os.environ, CODEX_OS3_SUPERVISOR=str(os.getpid()))
+    return subprocess.Popen([sys.executable, "-m", "codex_os3", "worker"], env=env,
                             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
