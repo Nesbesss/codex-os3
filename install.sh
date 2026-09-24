@@ -44,7 +44,7 @@ if [ "$UNINSTALL" = 1 ]; then
   else
     systemctl --user disable --now codex-os3 2>/dev/null || true
     rm -f "$UNIT"; systemctl --user daemon-reload 2>/dev/null || true
-    (crontab -l 2>/dev/null | grep -v "codex-os3-keepalive") | crontab - 2>/dev/null || true
+    { crontab -l 2>/dev/null | grep -v "codex-os3-keepalive" || true; } | crontab - 2>/dev/null || true
     pkill -f "codex_os3 (serve|worker)" 2>/dev/null || true
   fi
   rm -rf "$APP_DIR"
@@ -184,7 +184,9 @@ UNIT
 cd "$APP_DIR" && PATH="$SVC_PATH" CODEX_OS3_HOME="$HOME_DIR" nohup "$PY" -m codex_os3 serve >> "$HOME_DIR/service.log" 2>&1 &
 KEEP
     chmod +x "$KEEP"
-    (crontab -l 2>/dev/null | grep -v "codex-os3-keepalive"; echo "@reboot $KEEP # codex-os3-keepalive"; echo "*/2 * * * * $KEEP # codex-os3-keepalive") | crontab -
+    { crontab -l 2>/dev/null | grep -v "codex-os3-keepalive" || true  # no crontab yet: grep/crontab fail
+      echo "@reboot $KEEP # codex-os3-keepalive"; echo "*/2 * * * * $KEEP # codex-os3-keepalive"; } | crontab - \
+      || die "could not write your crontab"
     [ "$RUNNING" = 1 ] && "$PY" -m codex_os3 reload >/dev/null || "$KEEP"
     ok "no systemd user session: using cron (@reboot + every 2 min) to keep it running"
   fi
