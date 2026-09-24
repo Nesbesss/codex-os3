@@ -55,12 +55,12 @@ jobs:
           ./install.ps1 -NoTray -NoWait
           if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "install failed" }
           $cfg = Get-Content "$env:USERPROFILE/.codex-os3/config.json" -Raw | ConvertFrom-Json
+          if (-not $cfg.port) { $cfg | Add-Member port 11435 -Force }
           $h = @{ Authorization = "Bearer $($cfg.api_key)" }
           $body = '{"messages":[{"role":"user","content":"hi"}]}'
           try { $r = Invoke-RestMethod "http://127.0.0.1:$($cfg.port)/v1/chat/completions" -Method Post -Headers $h -Body $body -ContentType "application/json" }
           catch {
             Write-Host "BODY: $($_.ErrorDetails.Message)"
-            Get-NetTCPConnection -LocalPort $cfg.port -State Listen | Format-Table -AutoSize | Out-String | Write-Host
             Get-CimInstance Win32_Process -Filter "Name like 'python%'" | Select-Object ProcessId, CommandLine | Format-List | Out-String | Write-Host
             Get-Content "$env:USERPROFILE/.codex-os3/service.log" -ErrorAction SilentlyContinue
             throw

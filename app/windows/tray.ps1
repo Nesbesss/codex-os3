@@ -3,7 +3,10 @@
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 
 $HomeDir = if ($env:CODEX_OS3_HOME) { $env:CODEX_OS3_HOME } else { Join-Path $env:USERPROFILE ".codex-os3" }
-function Port { try { (Get-Content (Join-Path $HomeDir "config.json") -Raw | ConvertFrom-Json).port } catch { 11435 } }
+function Port {  # config.json only holds changed settings: no "port" key means the default
+    try { $p = (Get-Content (Join-Path $HomeDir "config.json") -Raw | ConvertFrom-Json).port } catch { $p = $null }
+    if ($p) { $p } else { 11435 }
+}
 function Base { "http://127.0.0.1:$(Port)" }
 function Api($path) { Invoke-RestMethod "$(Base)/api/$path" -TimeoutSec 5 }
 function Post($path) {
