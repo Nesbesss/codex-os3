@@ -3,11 +3,28 @@ import base64, json, re
 
 FALSE_UNAVAILABLE = re.compile(
     r"(n[\u2019']?t|not|no longer) (be )?(available|accessible|enabled|connected)|unavailable|"
-    r"(no|without) access to|(couldn[\u2019']?t|could not|cannot|can[\u2019']?t) (access|reach|use|control)",
+    r"(no|without) access to|(couldn[\u2019']?t|could not|cannot|can[\u2019']?t) (access|reach|use|control)|"
+    r"(do|does)(n[\u2019']?t| not) have (an? |the |any )?`?[\w.-]*`? ?(tool|function|access)|"
+    r"(there is |there[\u2019']s )?no `?[\w.-]+`? (tool|function) (available|here|in this)",
     re.I)
+_NEG = re.compile(r"\b(can[\u2019']?t|cannot|unable|don[\u2019']?t|doesn[\u2019']?t|not|no|isn[\u2019']?t|aren[\u2019']?t|without)\b", re.I)
+
+
+def claims_unavailable(content, tool_names):
+    """A final answer that says a tool/device is unavailable: known phrasings, or naming one of
+    the tools that ARE available next to a negation ("the tools don't include `ping`")."""
+    if FALSE_UNAVAILABLE.search(content or ""):
+        return True
+    if not content or not _NEG.search(content):
+        return False
+    return any(re.search(r"(?<![\w-])`?" + re.escape(n) + r"`?(?![\w-])", content) for n in tool_names if len(n) > 2)
+
+
 RETRY_NUDGE = (
     "\n\nCORRECTION: your previous draft answered that a tool, device or computer control "
-    "is unavailable. That is wrong: every tool listed above is available and connected, and "
+    "is unavailable. That is wrong: the application's tools are not in your built-in tool list; "
+    "you call them by answering with kind=\"tool_call\" and the tool name in `calls`. Every "
+    "application tool listed above is available and connected, and "
     "a successful tool result means it works. Do not report unavailability. Continue the "
     "task now with tool calls. Only give a final answer if a tool call above actually "
     "returned an error, and then quote that error verbatim.")
@@ -137,7 +154,10 @@ def flatten(messages, tools, images=None, header=True, all_messages=None):
             f = t.get("function", t)
             lines.append(f"- {f.get('name')}: {f.get('description','')}\n"
                          f"  parameters: {json.dumps(f.get('parameters', {}))}")
-        out.append("You have access to these tools:\n" + "\n".join(lines))
+        out.append("The application's tools are listed below. They are NOT part of your own built-in tool "
+                   "list, so you will not see them there: you call one by answering with kind=\"tool_call\" "
+                   "and its name in `calls`, and the application runs it. Every tool below is available.\n"
+                   "Application tools:\n" + "\n".join(lines))
 
     call_names = {c.get("id"): c.get("function", {}).get("name", "")
                   for m in (all_messages or messages) for c in (m.get("tool_calls") or [])}
@@ -178,7 +198,7 @@ def flatten(messages, tools, images=None, header=True, all_messages=None):
             "screenshots/images referenced as [image #N] in the conversation; the highest number "
             "is the newest. If a tool result above already answers the user, or no tool is "
             "needed, reply with kind=\"final\", content=<your answer>, calls=[]. "
-            "Do not call the same tool twice with identical arguments. arguments_json must be strictly valid JSON: escape every backslash in string values as \\\\ (e.g. a shell \\( becomes \\\\( ) and newlines as \\n."
+            "Repeating an earlier call is fine when the conversation asks for it. arguments_json must be strictly valid JSON: escape every backslash in string values as \\\\ (e.g. a shell \\( becomes \\\\( ) and newlines as \\n."
         )
     return "\n\n".join(out).strip()
 

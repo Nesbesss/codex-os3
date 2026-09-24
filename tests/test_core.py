@@ -100,7 +100,16 @@ class Prompt(unittest.TestCase):
 
     def test_false_unavailable(self):
         self.assertTrue(P.FALSE_UNAVAILABLE.search("computer control isn’t available in this session"))
+        self.assertTrue(P.FALSE_UNAVAILABLE.search("I don’t have a `ping` tool available in this session."))
+        self.assertTrue(P.FALSE_UNAVAILABLE.search("There is no ping function available here."))
         self.assertFalse(P.FALSE_UNAVAILABLE.search("Done — the file is saved."))
+        self.assertFalse(P.FALSE_UNAVAILABLE.search("I don't have any more questions, it's done."))
+        names = ["ping", "computer_use", "shell"]
+        self.assertTrue(P.claims_unavailable("The available tools here don’t include `ping`, so I can’t make that call.", names))
+        self.assertTrue(P.claims_unavailable("computer_use is not something I can run here", names))
+        self.assertFalse(P.claims_unavailable("Pinged it: the reply was pong.", names))          # no negation
+        self.assertFalse(P.claims_unavailable("I can't find that file on your Mac.", names))       # no tool named
+        self.assertFalse(P.claims_unavailable("Done, nothing else to do.", names))
 
 
 class Sessions(unittest.TestCase):

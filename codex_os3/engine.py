@@ -131,7 +131,8 @@ class Turn:
     def corrections(self, raw, prompt, images):
         tools, node_src = self.tools, self.node_src
         d = P.parse_decision(raw) or {}
-        if d.get("kind") == "final" and P.FALSE_UNAVAILABLE.search(d.get("content", "")):
+        names = [t.get("function", t).get("name", "") for t in tools]
+        if d.get("kind") == "final" and P.claims_unavailable(d.get("content", ""), names):
             # models sometimes invent "tool not available" right after a successful call;
             # one correction. A real blocker survives the second pass.
             self.ev("false_unavailable", d["content"][:160])
