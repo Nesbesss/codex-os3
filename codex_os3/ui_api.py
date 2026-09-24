@@ -79,8 +79,8 @@ def usage(hours):
         f"SELECT CAST(ts/{bucket} AS INT)*{bucket} AS t, COUNT(*) n, SUM(COALESCE(in_tok,0)) i, "
         "SUM(COALESCE(cached_tok,0)) c, SUM(COALESCE(out_tok,0)) o, SUM(tools>0) agent "
         "FROM requests WHERE ts>? GROUP BY t ORDER BY t", (since,))
-    tot = store.q("SELECT COUNT(*) n, SUM(COALESCE(in_tok,0)) i, SUM(COALESCE(cached_tok,0)) c, "
-                  "SUM(COALESCE(out_tok,0)) o FROM requests WHERE ts>?", (since,))[0]
+    tot = store.q("SELECT COUNT(*) n, COALESCE(SUM(in_tok),0) i, COALESCE(SUM(cached_tok),0) c, "
+                  "COALESCE(SUM(out_tok),0) o FROM requests WHERE ts>?", (since,))[0]
     by_role = store.q("SELECT COALESCE(role,'?') role, COUNT(*) n, SUM(COALESCE(in_tok,0)) i, "
                       "SUM(COALESCE(out_tok,0)) o FROM requests WHERE ts>? GROUP BY role ORDER BY i DESC", (since,))
     return {"bucket": bucket, "series": rows, "total": tot, "by_role": by_role}

@@ -98,7 +98,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
   <div class="grid">
     <div class="card"><h2>5-hour window</h2><div id="lim5"><span class="muted">no data yet — appears after the first request</span></div></div>
     <div class="card"><h2>Weekly limit</h2><div id="limw"><span class="muted">no data yet</span></div></div>
-    <div class="card"><h2>Tokens today</h2><div id="tok"></div></div>
+    <div class="card"><h2 id="tokh">Tokens · last 24 h</h2><div id="tok"></div></div>
     <div class="card"><h2>rabbit-agent</h2><div id="agent"></div></div>
   </div>
   <div class="card" style="margin-top:14px">
@@ -224,9 +224,9 @@ async function dash(st) {
   $("#limw").innerHTML = meter(L.s_pct, L.s_reset);
   $("#agent").innerHTML = agentHtml(st.agent);
   const u = await api("usage?hours=" + $("#range").value);
-  const today = await api("usage?hours=" + ((Date.now() - new Date().setHours(0,0,0,0))/3600000));
-  const T = today.total;
-  const rolesTbl = (today.by_role || []).filter(r => r.role !== "?").map(r => `<tr><td>${esc(ROLE_LABEL[r.role] || r.role)}</td><td class="num">${fmtN(r.i)}</td><td class="num">${r.n}</td></tr>`).join("");
+  const T = u.total;
+  $("#tokh").textContent = "Tokens · " + $("#range").selectedOptions[0].text;
+  const rolesTbl = (u.by_role || []).filter(r => r.role !== "?").map(r => `<tr><td>${esc(ROLE_LABEL[r.role] || r.role)}</td><td class="num">${fmtN(r.i)}</td><td class="num">${r.n}</td></tr>`).join("");
   $("#tok").innerHTML = `<div class="big">${fmtN(T.i)}</div><p class="muted">input (${T.i ? Math.round(100*T.c/T.i) : 0}% cached) · output ${fmtN(T.o)} · ${T.n} requests</p>` +
     (rolesTbl ? `<table class="roles-tbl"><tr><th>role</th><th class="num">input</th><th class="num">calls</th></tr>${rolesTbl}</table>` : "");
   chart(u);
