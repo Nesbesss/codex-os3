@@ -9,6 +9,16 @@ EDITABLE = {"model", "effort", "bind", "port", "captures", "retention_days", "je
             "webhook", "watchdog", "restart_agent", "max_codex", "max_images"}
 
 
+MIN_CODEX = "0.155.0"  # older CLIs reject the current models ("requires a newer version of Codex")
+
+
+def _ver(v):
+    try:
+        return tuple(int(x) for x in str(v).split("-")[0].split(".")[:3])
+    except ValueError:
+        return (999,)  # dev/fake builds: don't block
+
+
 def codex_info():
     b = shutil.which("codex")
     info = {"path": b, "version": None, "logged_in": None}
@@ -32,7 +42,9 @@ def doctor(cfg):
     first = store.q("SELECT MIN(ts) t, MAX(ts) l, COUNT(*) n FROM requests")[0]
     return [
         {"check": "Codex CLI installed", "ok": bool(c["path"]), "detail": c["path"] or "npm i -g @openai/codex"},
-        {"check": "Codex CLI version", "ok": bool(c["version"]), "detail": c["version"] or "?"},
+        {"check": f"Codex CLI version ≥ {MIN_CODEX}", "ok": _ver(c["version"]) >= _ver(MIN_CODEX),
+         "detail": (c["version"] or "?") + ("" if _ver(c["version"]) >= _ver(MIN_CODEX)
+                                             else " — update: npm i -g @openai/codex@latest")},
         {"check": "Codex logged in (ChatGPT subscription)", "ok": bool(c["logged_in"]),
          "detail": c.get("login_detail") or "run: codex login"},
         {"check": "rabbit-agent installed on this machine", "ok": os3.installed(),

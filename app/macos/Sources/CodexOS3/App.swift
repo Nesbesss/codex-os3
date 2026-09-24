@@ -72,6 +72,12 @@ final class RouterModel: ObservableObject {
     var base: String { "http://127.0.0.1:\(port)" }
 
     init() {
+        // first launch: start with the user's session, like the router service does
+        if !UserDefaults.standard.bool(forKey: "didRegisterLoginItem") {
+            try? SMAppService.mainApp.register()
+            UserDefaults.standard.set(true, forKey: "didRegisterLoginItem")
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }

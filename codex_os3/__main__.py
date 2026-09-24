@@ -72,7 +72,7 @@ def main(argv):
         from . import ui_api
         print(f"codex-os3 {__version__}  service: {'running' if ui_api._supervisor_pid() else 'stopped'}")
         a = os3.status()
-        print(f"rabbit-agent: {a.get('status', 'not found')} (pid {a.get('pid')})")
+        print(f"rabbit-agent: {a['status']} (pid {a.get('pid')})" if a else "rabbit-agent: not installed on this machine")
         if lim:
             l = lim[0]
             print(f"Codex 5h window: {l['p_pct']}% used · weekly: {l['s_pct']}% used")
