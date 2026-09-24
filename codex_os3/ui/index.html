@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>codex-os3</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f4f1; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #8a8983;
+  --line: #e1e0d9; --axis: #c3c2b7; --accent: #2a78d6; --accent-track: #d9e7f8;
+  --good: #0ca30c; --good-ink: #006300; --warn: #fab219; --crit: #d03b3b;
+  --ring: rgba(11,11,11,0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg: #111110; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #8a8983;
+    --line: #2c2c2a; --axis: #383835; --accent: #3987e5; --accent-track: #1f3350;
+    --good-ink: #0ca30c; --ring: rgba(255,255,255,0.10);
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line);
+  background: var(--surface); position: sticky; top: 0; z-index: 2; flex-wrap: wrap; }
+header h1 { font-size: 16px; margin: 0; font-weight: 650; }
+header .ver { color: var(--ink-3); font-size: 12px; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; }
+nav button { border: 0; background: none; color: var(--ink-2); padding: 6px 10px; border-radius: 8px;
+  font: inherit; cursor: pointer; }
+nav button[aria-selected="true"] { background: var(--bg); color: var(--ink); font-weight: 600; }
+.pill { margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 99px; background: var(--bg);
+  color: var(--ink-2); }
+main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+section[hidden] { display: none; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; }
+.card h2 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: var(--ink-2); }
+.big { font-size: 28px; font-weight: 650; }
+.muted { color: var(--ink-3); font-size: 12px; }
+.meter { height: 10px; border-radius: 99px; background: var(--accent-track); overflow: hidden; margin: 10px 0 6px; }
+.meter > i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.meter.warn > i { background: var(--warn); } .meter.crit > i { background: var(--crit); }
+.status { font-size: 12px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; color: var(--ink-3); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl { overflow-x: auto; }
+.chart { position: relative; }
+.chart svg { width: 100%; height: 200px; display: block; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--ring);
+  border-radius: 8px; padding: 6px 9px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; }
+.ok { color: var(--good-ink); } .bad { color: var(--crit); } .wn { color: #b07800; }
+@media (prefers-color-scheme: dark) { .wn { color: var(--warn); } }
+.kv { display: grid; grid-template-columns: max-content 1fr auto; gap: 8px 14px; align-items: center; }
+.kv code, code.blk { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg);
+  padding: 4px 8px; border-radius: 6px; overflow-wrap: anywhere; }
+button.btn { border: 1px solid var(--ring); background: var(--surface); color: var(--ink); border-radius: 8px;
+  padding: 6px 12px; font: inherit; cursor: pointer; }
+button.btn:hover { background: var(--bg); }
+button.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+label.f { display: grid; gap: 4px; margin-bottom: 12px; font-size: 13px; color: var(--ink-2); }
+label.f input, label.f select { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--ring);
+  background: var(--surface); color: var(--ink); max-width: 420px; }
+.check { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.lvl-error { color: var(--crit); font-weight: 600; } .lvl-warn { color: #b07800; font-weight: 600; }
+details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-top: 8px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--surface);
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+@media (max-width: 600px) { .kv { grid-template-columns: 1fr; } header { padding: 12px 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>codex-os3 <span class="ver" id="ver"></span></h1>
+  <nav role="tablist">
+    <button data-tab="dash" aria-selected="true">Dashboard</button>
+    <button data-tab="setup">Setup</button>
+    <button data-tab="watch">Watchdog</button>
+    <button data-tab="tasks">Tasks &amp; export</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+  <span class="pill" id="health">…</span>
+</header>
+<main>
+<section id="dash">
+  <div class="grid">
+    <div class="card"><h2>5-hour window</h2><div id="lim5"><span class="muted">no data yet — appears after the first request</span></div></div>
+    <div class="card"><h2>Weekly limit</h2><div id="limw"><span class="muted">no data yet</span></div></div>
+    <div class="card"><h2>Tokens today</h2><div id="tok"></div></div>
+    <div class="card"><h2>rabbit-agent</h2><div id="agent"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="row" style="margin:0 0 6px;justify-content:space-between">
+      <h2 style="margin:0">Input tokens per hour</h2>
+      <select id="range" class="btn"><option value="24">last 24 h</option><option value="72">last 3 days</option><option value="168">last 7 days</option></select>
+    </div>
+    <div class="chart" id="chart"></div>
+    <details><summary>Show as table</summary><div class="tbl" id="charttbl"></div></details>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>Recent requests</h2><div class="tbl" id="reqs"></div></div>
+</section>
+
+<section id="setup" hidden>
+  <div class="card">
+    <h2>Connect OS3</h2>
+    <p class="muted">In OS3: Settings → API keys → provider <b>local</b>. Pick <b>this machine</b> as the device (the router must run on the same machine as the device).</p>
+    <div class="kv" id="vals"></div>
+    <div class="row"><button class="btn" id="rotate">Rotate API key</button><span class="muted">After rotating, delete and re-register the connection in OS3.</span></div>
+    <p id="conn" class="status" style="margin-top:14px"></p>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>Checks</h2><div id="doctor"></div></div>
+  <div class="card" style="margin-top:14px">
+    <h2>Other machines (nodes)</h2>
+    <p class="muted">Other computers join OS3 with rabbit's own node installer (OS3 → Settings → add device). They don't need this router: model calls always go through the one device you picked above; tasks can still run on every node.</p>
+  </div>
+</section>
+
+<section id="watch" hidden>
+  <div class="grid">
+    <div class="card"><h2>Watchdog status</h2><div id="wdstat"></div></div>
+    <div class="card"><h2>rabbit-agent</h2><div id="wdagent"></div>
+      <div class="row"><button class="btn" id="restart">Restart rabbit-agent</button></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>Events</h2>
+    <div class="row" style="margin:0 0 8px"><select id="evsrc" class="btn"><option value="">all</option><option value="watchdog">watchdog</option><option value="router">router</option><option value="supervisor">service</option><option value="ui">ui</option></select></div>
+    <div class="tbl" id="events"></div></div>
+</section>
+
+<section id="tasks" hidden>
+  <div class="card"><h2>Tasks</h2><p class="muted">One row per OS3 task (conversation or worker). Export downloads a zip with a report, the timeline and router fixes — secrets redacted.</p><div class="tbl" id="tasklist"></div></div>
+</section>
+
+<section id="settings" hidden>
+  <div class="card" style="max-width:640px">
+    <h2>Settings</h2>
+    <form id="cfg"></form>
+    <div class="row"><button class="btn primary" id="save">Save</button><span class="muted" id="savemsg"></span></div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtN = (n) => n == null ? "–" : n >= 1e9 ? (n/1e9).toFixed(1)+"B" : n >= 1e6 ? (n/1e6).toFixed(1)+"M" : n >= 1e3 ? (n/1e3).toFixed(1)+"K" : String(n);
+const fmtT = (t) => t ? new Date(t*1000).toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"}) : "–";
+const ago = (t) => { if (!t) return "–"; const s = Date.now()/1000 - t; return s < 60 ? Math.round(s)+"s ago" : s < 3600 ? Math.round(s/60)+" min ago" : s < 86400 ? Math.round(s/3600)+" h ago" : Math.round(s/86400)+" d ago"; };
+const until = (t) => { if (!t) return ""; const s = t - Date.now()/1000; if (s <= 0) return "resetting"; const h = Math.floor(s/3600), m = Math.round((s%3600)/60); return "resets in " + (h ? h+" h " : "") + m + " min"; };
+const api = async (path, opts={}) => { const r = await fetch("/api/" + path, opts); if (!r.ok) throw new Error((await r.text()).slice(0,200)); return r.json(); };
+const post = (path, body={}) => api(path, {method:"POST", headers:{"Content-Type":"application/json","X-Codex-OS3":"1"}, body: JSON.stringify(body)});
+const toast = (m) => { const t = $("#toast"); t.textContent = m; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); };
+const copy = (v) => navigator.clipboard.writeText(v).then(() => toast("Copied"));
+
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll("main section").forEach(s => s.hidden = s.id !== b.dataset.tab);
+  try { localStorage.setItem("tab", b.dataset.tab); } catch (e) {}
+  refresh();
+});
+try { const t = location.hash.slice(1) || localStorage.getItem("tab"); if (t) document.querySelector(`nav button[data-tab="${t}"]`)?.click(); } catch (e) {}
+
+function meter(pct, reset) {
+  if (pct == null) return '<span class="muted">no data yet</span>';
+  const cls = pct >= 90 ? "crit" : pct >= 70 ? "warn" : "";
+  const st = pct >= 90 ? '<span class="status bad">⛔ nearly used up</span>' : pct >= 70 ? '<span class="status wn">⚠ getting high</span>' : '<span class="status ok">✓ fine</span>';
+  return `<div class="big">${Math.round(pct)}%</div><div class="meter ${cls}" role="meter" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.min(100,pct)}%"></i></div><div class="row" style="margin:0;justify-content:space-between">${st}<span class="muted">${until(reset)}</span></div>`;
+}
+
+function chart(usage) {
+  const s = usage.series, el = $("#chart");
+  if (!s.length) { el.innerHTML = '<p class="muted">No requests in this range.</p>'; $("#charttbl").innerHTML = ""; return; }
+  const W = 1000, H = 200, pl = 44, pb = 22, pt = 8, max = Math.max(...s.map(d => d.i)) || 1;
+  const step = usage.bucket, hours = Number($("#range").value);
+  const t1 = Math.floor(Date.now()/1000/step)*step, t0 = t1 - Math.round(hours*3600/step - 1)*step, n = Math.round((t1 - t0)/step) + 1;
+  const bw = Math.max(2, (W - pl) / n - 2), x = (t) => pl + ((t - t0)/step) * ((W - pl)/n) + 1;
+  const y = (v) => pt + (H - pb - pt) * (1 - v/max);
+  let g = "";
+  for (const f of [0, .5, 1]) g += `<line x1="${pl}" x2="${W}" y1="${y(max*f)}" y2="${y(max*f)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-6}" y="${y(max*f)+4}" text-anchor="end" font-size="11" fill="var(--ink-3)">${fmtN(Math.round(max*f))}</text>`;
+  const bars = s.map((d, i) => { const h = H - pb - y(d.i); return `<rect data-i="${i}" x="${x(d.t)}" y="${y(d.i)}" width="${bw}" height="${Math.max(0,h)}" rx="${Math.min(4, bw/2)}" fill="var(--accent)"/><rect data-i="${i}" x="${x(d.t)-1}" y="${pt}" width="${bw+2}" height="${H-pb-pt}" fill="transparent"/>`; }).join("");
+  const ticks = Array.from({length: n}, (_, i) => ({t: t0 + i*step})).filter((_, i) => i % Math.ceil(n/6) === 0);
+  const lbl = ticks.map(d => `<text x="${x(d.t)+bw/2}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--ink-3)">${new Date(d.t*1000).toLocaleString([], step === 3600 ? {hour:"2-digit", minute:"2-digit"} : {month:"short", day:"numeric"})}</text>`).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="Input tokens per ${step === 3600 ? "hour" : "day"}">${g}<line x1="${pl}" x2="${W}" y1="${H-pb}" y2="${H-pb}" stroke="var(--axis)"/>${bars}${lbl}</svg><div class="tip" hidden></div>`;
+  const tip = el.querySelector(".tip");
+  el.querySelectorAll("rect[data-i]").forEach(r => {
+    r.onmousemove = (e) => { const d = s[r.dataset.i]; tip.hidden = false;
+      tip.innerHTML = `<b>${fmtT(d.t)}</b><br>input ${fmtN(d.i)} (cached ${fmtN(d.c)})<br>output ${fmtN(d.o)} · ${d.n} requests`;
+      const b = el.getBoundingClientRect(); tip.style.left = Math.min(e.clientX - b.left + 12, b.width - 180) + "px"; tip.style.top = (e.clientY - b.top - 10) + "px"; };
+    r.onmouseleave = () => tip.hidden = true;
+  });
+  $("#charttbl").innerHTML = `<table><tr><th>time</th><th class="num">requests</th><th class="num">input</th><th class="num">cached</th><th class="num">output</th></tr>${s.map(d => `<tr><td>${fmtT(d.t)}</td><td class="num">${d.n}</td><td class="num">${fmtN(d.i)}</td><td class="num">${fmtN(d.c)}</td><td class="num">${fmtN(d.o)}</td></tr>`).join("")}</table>`;
+}
+
+function agentHtml(a) {
+  if (!a || !a.status) return '<span class="status bad">✗ not found on this machine</span><p class="muted">Install the OS3 node on this machine first.</p>';
+  const good = a.status === "connected" && a.running;
+  return `<div class="status ${good ? "ok" : "bad"}">${good ? "✓ connected" : "✗ " + esc(a.status) + (a.running ? "" : " (not running)")}</div><p class="muted">pid ${esc(a.pid)} · v${esc(a.version)}<br>node ${esc((a.nodeId||"").slice(0,8))}…</p>`;
+}
+
+async function dash(st) {
+  const L = st.limits || {};
+  $("#lim5").innerHTML = meter(L.p_pct, L.p_reset);
+  $("#limw").innerHTML = meter(L.s_pct, L.s_reset);
+  $("#agent").innerHTML = agentHtml(st.agent);
+  const u = await api("usage?hours=" + $("#range").value);
+  const today = await api("usage?hours=" + ((Date.now() - new Date().setHours(0,0,0,0))/3600000));
+  const T = today.total;
+  $("#tok").innerHTML = `<div class="big">${fmtN(T.i)}</div><p class="muted">input (${T.i ? Math.round(100*T.c/T.i) : 0}% cached) · output ${fmtN(T.o)} · ${T.n} requests</p>`;
+  chart(u);
+  const rs = await api("requests?limit=40");
+  $("#reqs").innerHTML = `<table><tr><th>time</th><th>kind</th><th>result</th><th class="num">duration</th><th class="num">input</th><th class="num">output</th><th>status</th></tr>${rs.map(r => {
+    const calls = r.calls ? JSON.parse(r.calls).join(", ") : ""; const dur = r.done_ts ? (r.done_ts - r.ts).toFixed(0) + "s" : "…";
+    const cls = r.status === "ok" ? "ok" : r.status === "running" ? "" : "bad";
+    return `<tr><td>${fmtT(r.ts)}</td><td>${r.tools ? "agent" : "chat"} · ${esc(r.mode || "")}</td><td>${esc(r.result || "")} ${esc(calls).slice(0,80)}</td><td class="num">${dur}</td><td class="num">${fmtN(r.in_tok)}</td><td class="num">${fmtN(r.out_tok)}</td><td class="${cls}">${esc(r.status)}${r.error ? " · " + esc(r.error).slice(0,80) : ""}</td></tr>`; }).join("")}</table>`;
+}
+
+async function setup(st) {
+  const c = await api("config");
+  const vals = [["endpoint", `http://localhost:${c.port}/v1`], ["model id", c.model], ["api key", c.api_key], ["context window", "200000"]];
+  $("#vals").innerHTML = vals.map(([k, v]) => `<span>${k}</span><code>${esc(v)}</code><button class="btn" data-copy="${esc(v)}">Copy</button>`).join("");
+  $("#vals").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy(b.dataset.copy));
+  const d = await api("doctor");
+  $("#doctor").innerHTML = d.map(x => `<div class="check"><span class="${x.ok ? "ok" : "bad"}">${x.ok ? "✓" : "✗"}</span><span>${esc(x.check)} <span class="muted">— ${esc(x.detail)}</span></span></div>`).join("");
+  const called = d.find(x => x.check.startsWith("OS3 has called"));
+  $("#conn").innerHTML = called?.ok ? '<span class="ok">✓ OS3 is connected and using this router</span>' : '<span class="wn">⏳ waiting for OS3… save the connection in OS3, then send it a message</span>';
+}
+
+async function watch(st) {
+  const w = st.watchdog || {};
+  const f = w.findings || [];
+  $("#wdstat").innerHTML = `<div class="status ${f.length ? "wn" : "ok"}">${f.length ? "⚠ " + f.map(x => esc(x.kind)).join(", ") : "✓ all healthy"}</div><p class="muted">last check ${ago(w.ts)}${w.advice ? "<br>Jev: " + esc(w.advice.diagnosis) + " (" + Math.round(100*(w.advice.confidence||0)) + "%)" : ""}</p>`;
+  $("#wdagent").innerHTML = agentHtml(st.agent);
+  const ev = await api("events?limit=150&source=" + $("#evsrc").value);
+  $("#events").innerHTML = `<table><tr><th>time</th><th>source</th><th>event</th><th>details</th></tr>${ev.map(e => `<tr><td>${fmtT(e.ts)}</td><td>${esc(e.source)}</td><td class="lvl-${esc(e.level)}">${esc(e.kind)}</td><td>${esc(e.msg).slice(0,240)}</td></tr>`).join("")}</table>`;
+}
+
+async function tasks() {
+  const t = await api("tasks?limit=60");
+  $("#tasklist").innerHTML = `<table><tr><th>last activity</th><th>kind</th><th class="num">requests</th><th class="num">input</th><th class="num">errors</th><th></th></tr>${t.map(x => `<tr><td>${fmtT(x.last)}</td><td>${x.tools ? "agent task" : "chat"}</td><td class="num">${x.requests}</td><td class="num">${fmtN(x.in_tok)}</td><td class="num ${x.errors ? "bad" : ""}">${x.errors}</td><td><a class="btn" href="/api/export?task=${esc(x.task)}&name=codex-os3-${esc(x.task)}">Export</a></td></tr>`).join("")}</table>`;
+}
+
+const FIELDS = [
+  ["model", "Default model", "select", ["gpt-6-luna","gpt-6-luna-high","gpt-5.6-luna","gpt-5.6-luna-high","gpt-5.5"], "gpt-5.6-luna reads screenshots more precisely; gpt-6-luna is the cleaner agent."],
+  ["effort", "Reasoning effort", "select", ["low","medium","high","xhigh"], "Higher is slower and uses more of your limit."],
+  ["watchdog", "Watchdog", "bool", null, "Detects a dead rabbit-agent tunnel, limits and stuck tasks."],
+  ["restart_agent", "Let the watchdog restart a stuck rabbit-agent", "bool"],
+  ["jev_key", "TypeSafe Jev key (optional)", "password", null, "Gives the watchdog a second opinion on ambiguous situations."],
+  ["webhook", "Alert webhook (optional)", "text", null, "e.g. https://ntfy.sh/your-topic — receives watchdog alerts."],
+  ["captures", "Store full requests for debugging", "bool", null, "Off by default: captures contain screenshots and anything you typed."],
+  ["retention_days", "Keep history (days)", "number"],
+  ["bind", "Listen on", "select", ["127.0.0.1","0.0.0.0"], "0.0.0.0 exposes the router on your network (API key still required). Needs a service restart."],
+];
+async function settings() {
+  const c = await api("config");
+  $("#cfg").innerHTML = FIELDS.map(([k, label, type, opts, help]) => {
+    const h = help ? `<span class="muted">${help}</span>` : "";
+    if (type === "bool") return `<label class="check"><input type="checkbox" name="${k}" ${c[k] ? "checked" : ""}> ${label}</label>${help ? `<p class="muted" style="margin:-6px 0 12px 26px">${help}</p>` : ""}`;
+    if (type === "select") return `<label class="f">${label}<select name="${k}">${opts.map(o => `<option ${o === c[k] ? "selected" : ""}>${o}</option>`).join("")}</select>${h}</label>`;
+    if (type === "password") return `<label class="f">${label}<input type="password" name="${k}" placeholder="${c[k] ? "•••••• (set — leave empty to keep)" : "not set"}">${h}</label>`;
+    return `<label class="f">${label}<input type="${type}" name="${k}" value="${esc(c[k])}">${h}</label>`;
+  }).join("");
+}
+$("#save").onclick = async () => {
+  const out = {};
+  FIELDS.forEach(([k, , type]) => { const el = $("#cfg").elements[k]; if (!el) return;
+    if (type === "bool") out[k] = el.checked; else if (type === "number") out[k] = Number(el.value);
+    else if (type === "password") { if (el.value) out[k] = el.value; } else out[k] = el.value; });
+  const r = await post("config", out);
+  $("#savemsg").textContent = r.restart_needed ? "Saved — restart the service for the listen setting." : "Saved.";
+  toast("Settings saved");
+};
+$("#rotate").onclick = async () => { if (!confirm("Rotate the API key? OS3 stops working until you re-register the connection with the new key.")) return; await post("key/rotate"); toast("New key created"); refresh(); };
+$("#restart").onclick = async () => { $("#restart").disabled = true; toast("Restarting rabbit-agent…"); try { const r = await post("agent/restart"); toast(r.message); } finally { $("#restart").disabled = false; refresh(); } };
+$("#range").onchange = () => refresh();
+$("#evsrc").onchange = () => refresh();
+
+async function refresh() {
+  try {
+    const st = await api("status");
+    $("#ver").textContent = "v" + st.version;
+    const ul = st.usage_limit && Date.now()/1000 - st.usage_limit.ts < 3600;
+    const f = (st.watchdog?.findings || []).filter(x => x.level === "error");
+    $("#health").innerHTML = ul ? "⛔ usage limit" + (st.usage_limit.resets ? " · resets " + esc(st.usage_limit.resets) : "") : f.length ? "⚠ " + esc(f[0].kind) : st.running ? "● working (" + st.running + ")" : "✓ idle";
+    const tab = document.querySelector('nav button[aria-selected="true"]').dataset.tab;
+    if (tab === "dash") await dash(st);
+    if (tab === "setup") await setup(st);
+    if (tab === "watch") await watch(st);
+    if (tab === "tasks") await tasks();
+    if (tab === "settings") await settings();
+  } catch (e) { $("#health").textContent = "✗ " + e.message; }
+}
+refresh();
+setInterval(() => { const tab = document.querySelector('nav button[aria-selected="true"]').dataset.tab; if (tab !== "settings") refresh(); }, 10000);
+</script>
+</body>
+</html>

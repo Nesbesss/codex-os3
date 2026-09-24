@@ -1,0 +1,91 @@
+"""codex-os3 command line.
+
+  serve              run the service (supervisor + worker + watchdog); used by launchd/systemd
+  worker             run one HTTP worker (started by the supervisor)
+  reload             swap in a fresh worker without dropping requests (after an upgrade)
+  status             service, rabbit-agent and Codex limits at a glance
+  doctor             setup checks
+  key [--rotate]     print (or rotate) the API key for OS3
+  setup-info         the values to paste into OS3
+  export <task>      write a task's log export zip to the current directory
+  wait-for-os3       block until OS3 sends its first request (used by the installer)
+"""
+import json, sys, time
+
+from . import __version__, config
+
+
+def main(argv):
+    cmd = argv[0] if argv else "status"
+    if cmd == "serve":
+        from . import supervisor
+        return supervisor.run()
+    if cmd == "worker":
+        from . import server
+        return server.serve_worker()
+    if cmd == "reload":
+        from . import ui_api
+        if not ui_api._supervisor_pid():
+            print("service not running")
+            return 1
+        ui_api.request_reload()
+        print("reload requested")
+        return 0
+    if cmd == "key":
+        cfg = config.save({"api_key": config.new_key()}) if "--rotate" in argv else config.ensure_key()
+        print(cfg["api_key"])
+        return 0
+    if cmd == "setup-info":
+        cfg = config.ensure_key()
+        print(f"""
+  In OS3: Settings → API keys → provider "local"
+    device          : this machine
+    endpoint        : http://localhost:{cfg['port']}/v1
+    model id        : {cfg['model']}
+    api key         : {cfg['api_key']}
+    context window  : 200000   (advanced)
+
+  Dashboard: http://localhost:{cfg['port']}/""")
+        return 0
+    if cmd == "doctor":
+        from . import ui_api
+        bad = 0
+        for c in ui_api.doctor(config.load()):
+            print(f"  {'✓' if c['ok'] else '✗'} {c['check']}: {c['detail']}")
+            bad += not c["ok"]
+        return 1 if bad else 0
+    if cmd == "status":
+        from . import os3, store
+        lim = store.q("SELECT * FROM limits ORDER BY ts DESC LIMIT 1")
+        from . import ui_api
+        print(f"codex-os3 {__version__}  service: {'running' if ui_api._supervisor_pid() else 'stopped'}")
+        a = os3.status()
+        print(f"rabbit-agent: {a.get('status', 'not found')} (pid {a.get('pid')})")
+        if lim:
+            l = lim[0]
+            print(f"Codex 5h window: {l['p_pct']}% used · weekly: {l['s_pct']}% used")
+        return 0
+    if cmd == "export" and len(argv) > 1:
+        from . import export
+        name = f"codex-os3-{argv[1]}.zip"
+        with open(name, "wb") as f:
+            f.write(export.build(argv[1]))
+        print(name)
+        return 0
+    if cmd == "wait-for-os3":
+        from . import store
+        since = time.time()
+        timeout = float(argv[1]) if len(argv) > 1 else 1800
+        while time.time() - since < timeout:
+            r = store.q("SELECT ts, model FROM requests WHERE ts > ? ORDER BY ts LIMIT 1", (since,))
+            if r:
+                print(json.dumps(r[0]))
+                return 0
+            time.sleep(2)
+        return 1
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)

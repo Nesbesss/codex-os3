@@ -1,0 +1,132 @@
+"""SQLite state shared by worker and supervisor processes (WAL mode).
+Stores metadata only (sizes, timings, tokens, tool names); message bodies go to
+captures/ and only when captures are enabled."""
+import json, os, sqlite3, threading, time
+
+from . import config
+
+DB = os.path.join(config.HOME, "state.db")
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS requests (
+  id INTEGER PRIMARY KEY, ts REAL, done_ts REAL, task TEXT, source TEXT, model TEXT,
+  stream INT, tools INT, msgs INT, bytes INT, imgs INT, mode TEXT, status TEXT, error TEXT,
+  result TEXT, calls TEXT, in_tok INT, cached_tok INT, out_tok INT, reason_tok INT);
+CREATE INDEX IF NOT EXISTS req_ts ON requests(ts);
+CREATE INDEX IF NOT EXISTS req_task ON requests(task);
+CREATE TABLE IF NOT EXISTS limits (
+  ts REAL, p_pct REAL, p_reset REAL, p_window INT, s_pct REAL, s_reset REAL, s_window INT);
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY, ts REAL, task TEXT, source TEXT, kind TEXT, level TEXT, msg TEXT, data TEXT);
+CREATE INDEX IF NOT EXISTS ev_ts ON events(ts);
+CREATE TABLE IF NOT EXISTS sessions (key TEXT PRIMARY KEY, thread TEXT, hashes TEXT, used REAL);
+CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
+"""
+
+_local = threading.local()
+_lock = threading.Lock()
+
+
+def db():
+    c = getattr(_local, "c", None)
+    if c is None:
+        os.makedirs(config.HOME, exist_ok=True)
+        c = sqlite3.connect(DB, timeout=30, isolation_level=None)
+        c.row_factory = sqlite3.Row
+        c.execute("PRAGMA busy_timeout=30000")
+        for attempt in range(20):  # supervisor, watchdog and workers may all open it at once
+            try:
+                c.execute("PRAGMA journal_mode=WAL")
+                c.executescript(SCHEMA)
+                break
+            except sqlite3.OperationalError:
+                time.sleep(0.2 * (attempt + 1))
+        _local.c = c
+    return c
+
+
+def _w(sql, args=()):
+    with _lock:
+        return db().execute(sql, args)
+
+
+def q(sql, args=()):
+    return [dict(r) for r in db().execute(sql, args).fetchall()]
+
+
+# -- requests -----------------------------------------------------------------
+
+def request_start(task, source, model, stream, tools, msgs, nbytes):
+    return _w("INSERT INTO requests(ts,task,source,model,stream,tools,msgs,bytes,status) "
+              "VALUES(?,?,?,?,?,?,?,?,'running')",
+              (time.time(), task, source, model, int(stream), tools, msgs, nbytes)).lastrowid
+
+
+def request_end(rid, **f):
+    f.setdefault("done_ts", time.time())
+    if isinstance(f.get("calls"), (list, tuple)):
+        f["calls"] = json.dumps(f["calls"])
+    keys = [k for k in f if k in ("done_ts", "imgs", "mode", "status", "error", "result", "calls",
+                                  "in_tok", "cached_tok", "out_tok", "reason_tok")]
+    _w(f"UPDATE requests SET {','.join(k + '=?' for k in keys)} WHERE id=?",
+       [f[k] for k in keys] + [rid])
+
+
+def add_tokens(rid, usage):
+    """Accumulate codex usage (several codex runs can serve one request)."""
+    if not usage:
+        return
+    _w("UPDATE requests SET in_tok=COALESCE(in_tok,0)+?, cached_tok=COALESCE(cached_tok,0)+?, "
+       "out_tok=COALESCE(out_tok,0)+?, reason_tok=COALESCE(reason_tok,0)+? WHERE id=?",
+       (usage.get("input_tokens", 0), usage.get("cached_input_tokens", 0),
+        usage.get("output_tokens", 0), usage.get("reasoning_output_tokens", 0), rid))
+
+
+def add_limits(rl):
+    if not rl:
+        return
+    p, s = rl.get("primary") or {}, rl.get("secondary") or {}
+    _w("INSERT INTO limits VALUES(?,?,?,?,?,?,?)",
+       (time.time(), p.get("used_percent"), p.get("resets_at"), p.get("window_minutes"),
+        s.get("used_percent"), s.get("resets_at"), s.get("window_minutes")))
+
+
+def event(kind, msg, task=None, source="router", level="info", data=None):
+    _w("INSERT INTO events(ts,task,source,kind,level,msg,data) VALUES(?,?,?,?,?,?,?)",
+       (time.time(), task, source, kind, level, msg, json.dumps(data) if data is not None else None))
+
+
+# -- sessions (survive worker reloads) ----------------------------------------
+
+def session_get(key):
+    r = q("SELECT * FROM sessions WHERE key=?", (key,))
+    return r[0] if r else None
+
+
+def session_put(key, thread, hashes):
+    _w("INSERT OR REPLACE INTO sessions VALUES(?,?,?,?)", (key, thread, json.dumps(hashes), time.time()))
+
+
+def session_drop(key):
+    _w("DELETE FROM sessions WHERE key=?", (key,))
+
+
+def sessions_stale(ttl):
+    return q("SELECT * FROM sessions WHERE used < ?", (time.time() - ttl,))
+
+
+# -- kv + housekeeping --------------------------------------------------------
+
+def kv_get(k, default=None):
+    r = q("SELECT v FROM kv WHERE k=?", (k,))
+    return json.loads(r[0]["v"]) if r else default
+
+
+def kv_set(k, v):
+    _w("INSERT OR REPLACE INTO kv VALUES(?,?)", (k, json.dumps(v)))
+
+
+def prune(days):
+    cut = time.time() - days * 86400
+    for t in ("requests", "limits", "events"):
+        _w(f"DELETE FROM {t} WHERE ts < ?", (cut,))

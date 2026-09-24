@@ -1,0 +1,71 @@
+"""Settings live in ~/.codex-os3/config.json; env vars override (CODEX_OS3_<KEY>)."""
+import json, os, secrets, threading
+
+HOME = os.path.expanduser(os.environ.get("CODEX_OS3_HOME", "~/.codex-os3"))
+PATH = os.path.join(HOME, "config.json")
+
+DEFAULTS = {
+    "port": 11435,            # 11434 is Ollama's
+    "bind": "127.0.0.1",      # rabbit relays via the local rabbit-agent; set 0.0.0.0 for remote use
+    "api_key": "",
+    "model": "gpt-6-luna",
+    "models": ["gpt-6-luna", "gpt-6-luna-high", "gpt-5.6-luna", "gpt-5.6-luna-high", "gpt-5.5"],
+    "effort": "medium",
+    "max_codex": 3,           # concurrent codex processes
+    "max_images": 2,          # newest screenshots attached per turn
+    "hang_idle_s": 90,        # no codex output/rollout growth for this long = hung upstream
+    "hang_max_s": 600,
+    "captures": False,        # store full request/response bodies (contain screenshots + secrets)
+    "retention_days": 7,
+    "jev_key": "",            # optional TypeSafe key: smarter watchdog
+    "webhook": "",            # optional ntfy/Telegram-style URL for watchdog alerts
+    "watchdog": True,
+    "restart_agent": True,    # watchdog may restart a stuck rabbit-agent
+}
+
+_lock = threading.Lock()
+
+
+def load():
+    with _lock:
+        cfg = dict(DEFAULTS)
+        try:
+            with open(PATH) as f:
+                cfg.update(json.load(f))
+        except (OSError, ValueError):
+            pass
+        for k, v in DEFAULTS.items():
+            env = os.environ.get("CODEX_OS3_" + k.upper())
+            if env is not None:
+                cfg[k] = type(v)(json.loads(env)) if isinstance(v, (bool, list)) else type(v)(env)
+        return cfg
+
+
+def save(updates):
+    """Merge updates into the file (only known keys) and return the new config."""
+    with _lock:
+        cur = {}
+        try:
+            with open(PATH) as f:
+                cur = json.load(f)
+        except (OSError, ValueError):
+            pass
+        cur.update({k: v for k, v in updates.items() if k in DEFAULTS})
+        os.makedirs(HOME, exist_ok=True)
+        tmp = PATH + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(cur, f, indent=2)
+        os.chmod(tmp, 0o600)  # holds the API key
+        os.replace(tmp, PATH)
+    return load()
+
+
+def ensure_key():
+    cfg = load()
+    if not cfg["api_key"]:
+        cfg = save({"api_key": new_key()})
+    return cfg
+
+
+def new_key():
+    return "cx-" + secrets.token_hex(16)
