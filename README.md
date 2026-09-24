@@ -131,6 +131,20 @@ e.g. `gpt-6-sol-high`.
 The logo is an original mark (a terminal prompt whose cursor branches into two routes); codex-os3 is not
 affiliated with or endorsed by OpenAI or rabbit.
 
+## Troubleshooting
+
+| you see | cause and fix |
+|---|---|
+| OS3: *"The device is offline or the local endpoint is unreachable"* when saving | the router must run on the **device you selected** in OS3, and the endpoint must be `http://localhost:11435/v1`. Check `codex-os3 doctor` on that machine. |
+| OS3: *"This model did not make a tool call"* when saving | fill in the **API key** field (it is not optional for this router), then save again |
+| OS3: *"Local LLM device can't be reached"* during tasks | the rabbit-agent's tunnel died; the watchdog restarts the agent automatically within ~2 min, or use *Restart rabbit-agent* in the dashboard / menu bar |
+| *"Codex usage limit reached — resets at …"* | your ChatGPT plan's 5-hour or weekly limit; the dashboard shows both. Use lighter models/effort per role to stretch it |
+| installer says *run this in Terminal on the Mac itself* | macOS services started over SSH lose their permissions; run it locally |
+| dashboard shows *Codex CLI version* ✗ | `npm i -g @openai/codex@latest` (older CLIs reject the current models) |
+| something else | open an issue with `codex-os3 doctor` output and a log export (dashboard → Tasks & export) |
+
+`codex-os3 doctor`: `cd ~/.codex-os3/app && python3 -m codex_os3 doctor`
+
 ## Privacy and security
 
 - The router listens on `127.0.0.1` only by default, and `/v1` always needs the API key

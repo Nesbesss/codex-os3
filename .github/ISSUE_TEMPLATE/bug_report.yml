@@ -1,0 +1,31 @@
+name: Bug report
+description: Something doesn't work with codex-os3 and OS3
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Check the **Troubleshooting** section of the README first, most setup issues are covered there.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do in OS3, what did you expect, what happened instead? Screenshots help.
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `codex-os3 doctor`
+      description: "Run: `cd ~/.codex-os3/app && python3 -m codex_os3 doctor`"
+      render: text
+    validations: { required: true }
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [macOS, Linux, Windows]
+    validations: { required: true }
+  - type: markdown
+    attributes:
+      value: |
+        **Log export:** dashboard (http://localhost:11435) → Tasks & export → Export the task that failed, and attach the zip.
+        Keys and passwords are redacted automatically, but have a quick look before uploading.
