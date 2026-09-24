@@ -11,6 +11,7 @@ DEFAULTS = {
     "model": "gpt-6-luna",
     "models": ["gpt-6-luna", "gpt-6-luna-high", "gpt-5.6-luna", "gpt-5.6-luna-high", "gpt-5.5"],
     "effort": "medium",
+    "codex_bin": "",          # absolute path to codex (services often lack the user's PATH)
     "max_codex": 3,           # concurrent codex processes
     "max_images": 2,          # newest screenshots attached per turn
     "hang_idle_s": 90,        # no codex output/rollout growth for this long = hung upstream

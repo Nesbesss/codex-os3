@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+# codex-os3 installer (macOS + Linux)
+#   curl -fsSL https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.sh | bash
+# Options: --uninstall [--purge]   --no-app   --no-wait   --port N
+# Env:     CODEX_OS3_SRC=<local checkout>  (install from a folder instead of GitHub)
+#          CODEX_OS3_REF=<branch|tag>       (default: main)
+set -euo pipefail
+
+REPO="Nesbesss/codex-os3"
+REF="${CODEX_OS3_REF:-main}"
+HOME_DIR="${CODEX_OS3_HOME:-$HOME/.codex-os3}"
+APP_DIR="$HOME_DIR/app"
+LABEL="ai.codexos3.router"
+OS="$(uname -s)"
+NO_APP=0; NO_WAIT=0; UNINSTALL=0; PURGE=0; PORT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --uninstall) UNINSTALL=1 ;; --purge) PURGE=1 ;; --no-app) NO_APP=1 ;; --no-wait) NO_WAIT=1 ;;
+    --port) PORT="$2"; shift ;;
+    *) echo "unknown option $1"; exit 2 ;;
+  esac
+  shift
+done
+
+b() { printf '\033[1m%s\033[0m\n' "$*"; }
+ok() { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+warn() { printf '  \033[33m!\033[0m %s\n' "$*"; }
+die() { printf '  \033[31m✗\033[0m %s\n' "$*"; exit 1; }
+tty_in() { if [ -r /dev/tty ]; then "$@" </dev/tty; else "$@"; fi; }
+
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+UNIT="$HOME/.config/systemd/user/codex-os3.service"
+
+# --------------------------------------------------------------------------- uninstall
+if [ "$UNINSTALL" = 1 ]; then
+  b "Uninstalling codex-os3"
+  if [ "$OS" = Darwin ]; then
+    launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+    rm -f "$PLIST"
+    for i in $(seq 1 30); do pgrep -f "codex_os3 (serve|worker)" >/dev/null || break; sleep 1; done
+    pkill -9 -f "codex_os3 (serve|worker)" 2>/dev/null || true
+    pkill -f "Codex OS3.app/Contents/MacOS/CodexOS3" 2>/dev/null || true
+    rm -rf "$HOME/Applications/Codex OS3.app"
+  else
+    systemctl --user disable --now codex-os3 2>/dev/null || true
+    rm -f "$UNIT"; systemctl --user daemon-reload 2>/dev/null || true
+    (crontab -l 2>/dev/null | grep -v "codex-os3-keepalive") | crontab - 2>/dev/null || true
+    pkill -f "codex_os3 (serve|worker)" 2>/dev/null || true
+  fi
+  rm -rf "$APP_DIR"
+  [ "$PURGE" = 1 ] && rm -rf "$HOME_DIR" && ok "removed all data ($HOME_DIR)"
+  ok "done"; exit 0
+fi
+
+b "codex-os3 installer"
+case "$OS" in Darwin|Linux) ;; *) die "use install.ps1 on Windows" ;; esac
+
+# launchd services started from an SSH session land outside the GUI session: they can't be
+# bootstrapped, and processes they start lose macOS permissions (Accessibility etc.)
+if [ "$OS" = Darwin ] && [ -n "${SSH_CONNECTION:-}" ]; then
+  die "run this in Terminal on the Mac itself, not over SSH (macOS services started over SSH lose their permissions)"
+fi
+
+# --------------------------------------------------------------------------- python
+PY=""
+for c in python3 /usr/bin/python3; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' 2>/dev/null; then
+    PY="$(command -v "$c")"; break
+  fi
+done
+if [ -z "$PY" ]; then
+  [ "$OS" = Darwin ] && die "Python 3.9+ not found. Run: xcode-select --install   (then re-run this installer)"
+  die "Python 3.9+ not found. Install it (e.g. sudo apt install python3) and re-run."
+fi
+ok "python: $PY ($("$PY" -c 'import platform; print(platform.python_version())'))"
+
+# --------------------------------------------------------------------------- codex cli
+if ! command -v codex >/dev/null 2>&1; then
+  b "Installing the Codex CLI"
+  if command -v npm >/dev/null 2>&1; then npm install -g @openai/codex >/dev/null
+  elif command -v brew >/dev/null 2>&1; then brew install codex >/dev/null
+  else die "install Node.js (https://nodejs.org) or Homebrew first, then re-run — the Codex CLI needs one of them"; fi
+fi
+CODEX="$(command -v codex)" || die "codex not on PATH after install"
+ok "codex: $CODEX ($("$CODEX" --version 2>/dev/null | awk '{print $NF}'))"
+if ! "$CODEX" login status >/dev/null 2>&1; then
+  b "Log in to Codex with your ChatGPT account"
+  tty_in "$CODEX" login || die "codex login failed"
+fi
+ok "codex is logged in"
+
+# --------------------------------------------------------------------------- rabbit-agent
+if [ -f "$HOME/.rabbit-agent/runtime/rabbit-agent.status.json" ]; then
+  ok "rabbit-agent found on this machine"
+else
+  warn "no rabbit OS3 node on this machine yet — install it from OS3 (Settings → add device) first;"
+  warn "the router must run on the same machine you select as the LLM device in OS3"
+fi
+
+# --------------------------------------------------------------------------- code
+b "Installing codex-os3"
+mkdir -p "$HOME_DIR"
+NEW="$HOME_DIR/app.new"; rm -rf "$NEW"; mkdir -p "$NEW"
+if [ -n "${CODEX_OS3_SRC:-}" ]; then
+  (cd "$CODEX_OS3_SRC" && tar --exclude .git --exclude app/macos/.build --exclude _proto -cf - .) | (cd "$NEW" && tar xf -)
+else
+  TGZ="$HOME_DIR/src.tgz"
+  if curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$REF" -o "$TGZ" 2>/dev/null; then :
+  elif command -v gh >/dev/null 2>&1 && gh api "repos/$REPO/tarball/$REF" > "$TGZ" 2>/dev/null; then :  # private repo
+  else die "could not download $REPO@$REF"; fi
+  tar xzf "$TGZ" -C "$NEW" --strip-components 1 && rm -f "$TGZ"
+fi
+[ -f "$NEW/codex_os3/__init__.py" ] || die "download looks incomplete"
+rm -rf "$APP_DIR.old"; [ -d "$APP_DIR" ] && mv "$APP_DIR" "$APP_DIR.old"; mv "$NEW" "$APP_DIR"; rm -rf "$APP_DIR.old"
+VERSION="$("$PY" -c "import sys; sys.path.insert(0, '$APP_DIR'); import codex_os3; print(codex_os3.__version__)")"
+ok "codex-os3 $VERSION in $APP_DIR"
+
+cd "$APP_DIR"
+[ -n "$PORT" ] && "$PY" -c "from codex_os3 import config; config.save({'port': int('$PORT')})"
+"$PY" -c "from codex_os3 import config; config.save({'codex_bin': '$CODEX'}); config.ensure_key()"
+PORT="$("$PY" -c "from codex_os3 import config; print(config.load()['port'])")"
+SVC_PATH="$(dirname "$CODEX"):$(dirname "$(command -v node 2>/dev/null || echo /usr/bin/node)"):/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+# --------------------------------------------------------------------------- service
+b "Installing the service"
+RUNNING=0
+"$PY" -m codex_os3 status 2>/dev/null | grep -q "service: running" && RUNNING=1
+if [ "$OS" = Darwin ]; then
+  mkdir -p "$(dirname "$PLIST")"
+  cat > "$PLIST" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key><array><string>$PY</string><string>-m</string><string>codex_os3</string><string>serve</string></array>
+  <key>WorkingDirectory</key><string>$APP_DIR</string>
+  <key>EnvironmentVariables</key><dict><key>PATH</key><string>$SVC_PATH</string><key>CODEX_OS3_HOME</key><string>$HOME_DIR</string></dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>$HOME_DIR/service.log</string>
+  <key>StandardErrorPath</key><string>$HOME_DIR/service.log</string>
+</dict></plist>
+PLIST
+  if [ "$RUNNING" = 1 ]; then
+    "$PY" -m codex_os3 reload >/dev/null && ok "upgraded without downtime (new worker started, old one drains)"
+  else
+    launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+    launchctl bootstrap "gui/$(id -u)" "$PLIST" || die "launchctl bootstrap failed"
+    ok "launchd service $LABEL (starts at login, restarts on crash)"
+  fi
+else
+  if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
+    mkdir -p "$(dirname "$UNIT")"
+    cat > "$UNIT" <<UNIT
+[Unit]
+Description=codex-os3 router (Codex subscription as the LLM for rabbit OS3)
+After=network-online.target
+
+[Service]
+WorkingDirectory=$APP_DIR
+Environment=PATH=$SVC_PATH
+Environment=CODEX_OS3_HOME=$HOME_DIR
+ExecStart=$PY -m codex_os3 serve
+ExecReload=$PY -m codex_os3 reload
+Restart=always
+RestartSec=3
+KillMode=mixed
+TimeoutStopSec=900
+
+[Install]
+WantedBy=default.target
+UNIT
+    systemctl --user daemon-reload
+    if [ "$RUNNING" = 1 ]; then "$PY" -m codex_os3 reload >/dev/null; ok "upgraded without downtime"
+    else systemctl --user enable --now codex-os3 >/dev/null 2>&1 || die "systemctl --user enable failed"; ok "systemd user service codex-os3"; fi
+    loginctl enable-linger "$USER" >/dev/null 2>&1 && ok "service keeps running when you're logged out" \
+      || warn "could not enable lingering: the service only runs while you're logged in (sudo loginctl enable-linger $USER)"
+  else
+    KEEP="$HOME_DIR/keepalive.sh"
+    cat > "$KEEP" <<KEEP
+#!/bin/sh
+# codex-os3-keepalive
+"$PY" -m codex_os3 status 2>/dev/null | grep -q "service: running" && exit 0
+cd "$APP_DIR" && PATH="$SVC_PATH" CODEX_OS3_HOME="$HOME_DIR" nohup "$PY" -m codex_os3 serve >> "$HOME_DIR/service.log" 2>&1 &
+KEEP
+    chmod +x "$KEEP"
+    (crontab -l 2>/dev/null | grep -v "codex-os3-keepalive"; echo "@reboot $KEEP # codex-os3-keepalive"; echo "*/2 * * * * $KEEP # codex-os3-keepalive") | crontab -
+    [ "$RUNNING" = 1 ] && "$PY" -m codex_os3 reload >/dev/null || "$KEEP"
+    ok "no systemd user session: using cron (@reboot + every 2 min) to keep it running"
+  fi
+fi
+
+for i in $(seq 1 30); do
+  "$PY" -c "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:$PORT/health', timeout=2)" 2>/dev/null && break
+  sleep 1
+done || true
+"$PY" -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:$PORT/health', timeout=2)" 2>/dev/null \
+  && ok "router answering on http://127.0.0.1:$PORT" || die "router did not start — see $HOME_DIR/service.log"
+
+# --------------------------------------------------------------------------- macOS app
+if [ "$OS" = Darwin ] && [ "$NO_APP" = 0 ]; then
+  ZIP="$HOME_DIR/app.zip"; rm -f "$ZIP"
+  if [ -d "$APP_DIR/app/macos/build/Codex OS3.app" ]; then ditto -c -k --keepParent "$APP_DIR/app/macos/build/Codex OS3.app" "$ZIP"
+  elif curl -fsSL "https://github.com/$REPO/releases/latest/download/CodexOS3-macos.zip" -o "$ZIP" 2>/dev/null; then :
+  elif command -v gh >/dev/null 2>&1 && gh release download -R "$REPO" -p CodexOS3-macos.zip -O "$ZIP" 2>/dev/null; then :
+  fi
+  if [ -s "$ZIP" ]; then
+    mkdir -p "$HOME/Applications"; pkill -f "Codex OS3.app/Contents/MacOS/CodexOS3" 2>/dev/null || true
+    rm -rf "$HOME/Applications/Codex OS3.app"; ditto -x -k "$ZIP" "$HOME/Applications/" && rm -f "$ZIP"
+    open "$HOME/Applications/Codex OS3.app" && ok "menu bar app: ~/Applications/Codex OS3.app"
+  else
+    warn "menu bar app not available for this version (the router works without it)"
+  fi
+fi
+
+# --------------------------------------------------------------------------- connect OS3
+"$PY" -m codex_os3 setup-info
+if [ "$OS" = Darwin ]; then open "http://localhost:$PORT/#setup" 2>/dev/null || true
+elif [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then xdg-open "http://localhost:$PORT/#setup" >/dev/null 2>&1 || true; fi
+
+if [ "$NO_WAIT" = 0 ] && [ -t 1 ]; then
+  b "Waiting for OS3 to connect… (save the connection in OS3 and send it a message; Ctrl-C to skip)"
+  if "$PY" -m codex_os3 wait-for-os3 1800 >/dev/null; then ok "OS3 is connected — you're done 🎉"
+  else warn "no request from OS3 yet; the dashboard shows when it connects"; fi
+fi

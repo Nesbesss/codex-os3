@@ -56,6 +56,30 @@ class Handler(BaseHTTPRequestHandler):
 
     # -- routes -------------------------------------------------------------
 
+    def handle_one_request(self):
+        """Count only requests being processed: idle keep-alive connections (an open dashboard
+        tab) must not keep a draining worker alive."""
+        self.raw_requestline = self.rfile.readline(65537)
+        if not self.raw_requestline:
+            self.close_connection = True
+            return
+        srv = self.server
+        with srv.active_lock:
+            srv.active += 1
+        try:
+            if not self.parse_request():
+                return
+            if srv.draining:
+                self.close_connection = True  # finish this one, then let the client reconnect elsewhere
+            method = getattr(self, "do_" + self.command, None)
+            if method is None:
+                return self.send_error(501, f"Unsupported method ({self.command!r})")
+            method()
+            self.wfile.flush()
+        finally:
+            with srv.active_lock:
+                srv.active -= 1
+
     def do_OPTIONS(self):
         self.send(204, b"", "text/plain", [("Access-Control-Allow-Origin", "*"),
                                             ("Access-Control-Allow-Headers", "Authorization, Content-Type")])
@@ -174,21 +198,13 @@ class Server(ThreadingHTTPServer):
 
     def __init__(self, addr):
         self.active = 0
+        self.draining = False
         self.active_lock = threading.Lock()
         super().__init__(addr, Handler, bind_and_activate=False)
         if hasattr(socket, "SO_REUSEPORT"):  # lets a new worker bind while the old one drains
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.server_bind()
         self.server_activate()
-
-    def process_request_thread(self, request, client_address):
-        with self.active_lock:
-            self.active += 1
-        try:
-            super().process_request_thread(request, client_address)
-        finally:
-            with self.active_lock:
-                self.active -= 1
 
 
 def serve_worker():
@@ -198,6 +214,7 @@ def serve_worker():
     stopping = threading.Event()
 
     def on_term(*_):
+        srv.draining = True
         stopping.set()
         threading.Thread(target=srv.shutdown, daemon=True).start()
 

@@ -15,8 +15,20 @@ import json, sys, time
 from . import __version__, config
 
 
+def _log_without_console():
+    """Under pythonw (Windows service) there is no stdout: send output to service.log."""
+    if sys.stdout is None or sys.stderr is None:
+        import os
+        os.makedirs(config.HOME, exist_ok=True)
+        f = open(os.path.join(config.HOME, "service.log"), "a", buffering=1, encoding="utf-8")
+        sys.stdout = sys.stdout or f
+        sys.stderr = sys.stderr or f
+
+
 def main(argv):
     cmd = argv[0] if argv else "status"
+    if cmd in ("serve", "worker"):
+        _log_without_console()
     if cmd == "serve":
         from . import supervisor
         return supervisor.run()
