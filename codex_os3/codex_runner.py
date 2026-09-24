@@ -47,11 +47,29 @@ def split_model(model, default_effort):
     return model, default_effort
 
 
+_known = {}
+
+
+def known_features(codex):
+    """Feature flags this codex build knows (`codex features list`); passing an unknown one to
+    --disable is a hard error, and the set changes between versions."""
+    if codex not in _known:
+        try:
+            out = subprocess.run([codex, "features", "list"], capture_output=True, text=True, timeout=30).stdout
+            _known[codex] = {line.split()[0] for line in out.splitlines() if line.strip()}
+        except (OSError, subprocess.SubprocessError):
+            _known[codex] = set()
+    return _known[codex]
+
+
 def build_cmd(cfg, model, schema_file=None, image_files=(), resume=None):
     model, effort = split_model(model, cfg["effort"])
-    cmd = [cfg.get("codex_bin") or "codex", "exec", *(["resume"] if resume else []), "--json",
+    codex = cfg.get("codex_bin") or "codex"
+    known = known_features(codex)
+    disabled = [f for f in DISABLED if f in known] if known else list(DISABLED)
+    cmd = [codex, "exec", *(["resume"] if resume else []), "--json",
            "--skip-git-repo-check", "--ignore-user-config", "--ignore-rules",
-           *[a for f in DISABLED for a in ("--disable", f)],
+           *[a for f in disabled for a in ("--disable", f)],
            *([] if resume else ["-s", "read-only", "-C", WORKDIR]), "-m", model,
            "-c", f"model_reasoning_effort={json.dumps(effort)}"]
     if schema_file:

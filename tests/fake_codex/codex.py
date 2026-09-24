@@ -8,6 +8,13 @@ a = sys.argv[1:]
 if "--version" in a:
     print("codex-cli 0.0.0-fake")
     sys.exit(0)
+if a[:2] == ["features", "list"]:
+    for f in ("computer_use", "multi_agent", "plugins", "shell_tool", "unified_exec"):  # sleep_tool unknown, like 0.151
+        print(f"{f:40} stable             true")
+    sys.exit(0)
+if any(x in ("sleep_tool", "hooks", "apps") for x in a):
+    print("Error: Unknown feature flag: sleep_tool", file=sys.stderr)
+    sys.exit(2)
 if a[:2] == ["login", "status"]:
     print("Logged in using ChatGPT (fake)")
     sys.exit(0)

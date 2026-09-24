@@ -82,7 +82,18 @@ if ! command -v codex >/dev/null 2>&1; then
   else die "install Node.js (https://nodejs.org) or Homebrew first, then re-run — the Codex CLI needs one of them"; fi
 fi
 CODEX="$(command -v codex)" || die "codex not on PATH after install"
-ok "codex: $CODEX ($("$CODEX" --version 2>/dev/null | awk '{print $NF}'))"
+MIN_CODEX="0.155.0"
+codex_ver() { "$CODEX" --version 2>/dev/null | awk '{print $NF}' | cut -d- -f1; }
+ver_lt() { [ "$(printf '%s\n%s\n' "$1" "$2" | sort -t. -k1,1n -k2,2n -k3,3n | head -1)" = "$1" ] && [ "$1" != "$2" ]; }
+if ver_lt "$(codex_ver)" "$MIN_CODEX"; then
+  b "Updating the Codex CLI ($(codex_ver) is too old for the current models)"
+  NPM="$(dirname "$CODEX")/npm"; [ -x "$NPM" ] || NPM="$(command -v npm || true)"
+  if [ -n "$NPM" ] && "$NPM" install -g @openai/codex@latest >/dev/null 2>&1; then :
+  elif command -v brew >/dev/null 2>&1 && brew upgrade codex >/dev/null 2>&1; then :
+  else warn "could not update codex automatically: run  npm i -g @openai/codex@latest"; fi
+  hash -r; CODEX="$(command -v codex)"
+fi
+ok "codex: $CODEX ($(codex_ver))"
 if ! "$CODEX" login status >/dev/null 2>&1; then
   b "Log in to Codex with your ChatGPT account"
   tty_in "$CODEX" login || die "codex login failed"
