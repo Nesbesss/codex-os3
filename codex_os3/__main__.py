@@ -26,6 +26,11 @@ def _log_without_console():
 
 
 def main(argv):
+    for stream in (sys.stdout, sys.stderr):  # Windows consoles (cp1252) can't print ✓ → etc.
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
     cmd = argv[0] if argv else "status"
     if cmd in ("serve", "worker"):
         _log_without_console()
