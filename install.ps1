@@ -29,13 +29,14 @@ Write-Host "codex-os3 installer (Windows, beta)" -ForegroundColor White
 
 # --- python --------------------------------------------------------------------------
 $Py = $null
-foreach ($c in "py", "python", "python3") {
+foreach ($c in "python", "python3", "py") {
     $cmd = Get-Command $c -ErrorAction SilentlyContinue
-    if ($cmd -and $cmd.Source -notlike "*WindowsApps*") {
-        $args3 = if ($c -eq "py") { @("-3") } else { @() }
-        & $cmd.Source @args3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)" 2>$null
-        if ($LASTEXITCODE -eq 0) { $Py = & $cmd.Source @args3 -c "import sys; print(sys.executable)"; break }
-    }
+    if (-not $cmd -or $cmd.Source -like "*WindowsApps*") { continue }  # skip the Microsoft Store stub
+    $extra = @()
+    if ($c -eq "py") { $extra = @("-3") }
+    try { $out = @(& $cmd.Source @extra -c "import sys; print(sys.version_info[0] * 100 + sys.version_info[1]); print(sys.executable)" 2>$null) }
+    catch { continue }
+    if ($out.Count -ge 2 -and [int]$out[0] -ge 309) { $Py = $out[1].Trim(); break }
 }
 if (-not $Py) { Die "Python 3.9+ not found. Install it from https://www.python.org/downloads/ (tick 'Add to PATH'), then re-run." }
 $PyW = Join-Path (Split-Path $Py) "pythonw.exe"
