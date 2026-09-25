@@ -1,12 +1,15 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-09-25)
 - Renamed to **os3-router** (was codex-os3); internal names, paths and services are unchanged, so upgrades
   need nothing
 - **Claude Code backend:** any role can use a Claude model (`claude-sonnet-5`, `claude-opus-5-5`, …) through
   the official `claude` CLI and your own Claude Code login; mix it with Codex per role
 - Dashboard shows the 5-hour and weekly limits per subscription; `doctor` checks Claude Code when a role uses it
 - Token card follows the chart's range (it was empty right after midnight)
+- Tested live on a Mac with Claude Pro: OS3's connection test, main chat, workers, background calls and computer
+  use with Sonnet 5 and Opus 5.5, and mixed Codex + Claude per role
+- Clear message in OS3 when a model isn't part of your plan (e.g. Fable 5.1 on Claude Pro)
 
 ## 0.1.1 (2026-09-24)
 - Per-role models: **Small** (main chat), **Standard** (workers), **Background** (memory/review), chosen in the

@@ -206,7 +206,7 @@ expensive in Codex quota; never run it in CI.
 
 | | install / service / upgrade / uninstall | with a real rabbit-agent + OS3 |
 |---|---|---|
-| **macOS** | ✓ launchd, tested on real Macs | ✓ in daily use |
+| **macOS** | ✓ launchd, tested on real Macs | ✓ in daily use (Codex); Claude Code tested live |
 | **Linux** | ✓ systemd user service and cron fallback (CI + Docker) | not yet |
 | **Windows** | ✓ Task Scheduler (CI on Windows Server) | not yet (beta) |
 
