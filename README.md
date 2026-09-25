@@ -214,6 +214,12 @@ cd ~/.codex-os3/app && python3 -m codex_os3 <command>
 ```
 Uninstall: `bash install.sh --uninstall [--purge]` · Windows: `install.ps1 -Uninstall [-Purge]`
 
+## Maintainers: reports → GitHub issues
+
+`tools/reports_to_issues.py` reads the reports channel with a Discord bot and turns problems into GitHub issues
+(label `report`, duplicates become "+1" comments). Run it on your own machine, e.g. from an OS3 scheduled task;
+the bot token stays there (`~/.os3-reports/discord_token`), never in this repo.
+
 ## Development
 
 ```sh

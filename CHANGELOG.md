@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 (2026-09-25)
+- **Report a problem:** a button in the dashboard (and under Get help) to tell the developer what went wrong,
+  with the router's diagnostics if you like. Anonymous: no OS3 messages, names or keys
+
 ## 0.3.0 (2026-09-25)
 - **New setup wizard:** step by step, with screenshots of every OS3 screen, Copy buttons, live checks and a
   clear message when something is wrong (e.g. an old connection or the wrong port). Opens by itself until

@@ -217,6 +217,13 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
     <div class="row"><button class="btn primary" id="hgo">Find the problem</button><span class="muted" id="hmsg"></span></div>
     <div id="hout"></div>
   </div>
+  <div class="card" style="max-width:760px;margin-top:14px" id="reportcard">
+    <h2>Report a problem</h2>
+    <p class="muted">Something broken or odd? Tell the developer. It's sent anonymously (no messages from OS3, no names, no keys) and becomes a GitHub issue.</p>
+    <label class="f"><textarea id="rtext" rows="4" placeholder="What happened, and what did you expect?"></textarea></label>
+    <label class="check"><input type="checkbox" id="rdiag" checked> Include the router's diagnostics (setup checks and recent errors)</label>
+    <div class="row"><button class="btn primary" id="rsend">Send report</button><span class="muted" id="rmsg"></span></div>
+  </div>
   <div class="card" style="max-width:760px;margin-top:14px">
     <h2>Common problems</h2>
     <ul class="faq">
@@ -454,6 +461,14 @@ document.addEventListener("click", async (e) => {
 });
 $("#lightbox").onclick = () => $("#lightbox").hidden = true;
 
+$("#rsend").onclick = async () => {
+  const text = $("#rtext").value.trim();
+  if (!text) { $("#rtext").focus(); return; }
+  $("#rsend").disabled = true;
+  try { const r = await post("report", {text, diagnostics: $("#rdiag").checked}); $("#rmsg").textContent = r.message; if (r.ok) $("#rtext").value = ""; }
+  catch (e) { $("#rmsg").textContent = e.message; }
+  $("#rsend").disabled = false;
+};
 $("#hgo").onclick = async () => {
   const problem = $("#hproblem").value.trim();
   if (!problem) { $("#hproblem").focus(); return; }
@@ -482,7 +497,7 @@ async function banner(st) {
   else b.innerHTML = `<div class="t"><span class="ok">✓</span> <b>Everything works.</b> <span class="muted">${esc(last.detail)}</span></div>`;
   if ((st.fallback_active || []).length) b.innerHTML += `<div class="t" style="flex-basis:100%"><b>↪ Fallback active:</b> <span class="muted">${st.fallback_active.map(x => x === "claude" ? "Claude" : "Codex").join(" and ")} hit the usage limit, so the fallback model is used for now.</span></div>`;
   const a = st.agent || {};
-  b.innerHTML += `<span class="ag">rabbit-agent ${a.status === "connected" ? "connected" : esc(a.status || "not found")}${a.version ? " · v" + esc(a.version) : ""} · <a class="lnk" id="restart">Restart</a></span>`;
+  b.innerHTML += `<span class="ag">rabbit-agent ${a.status === "connected" ? "connected" : esc(a.status || "not found")}${a.version ? " · v" + esc(a.version) : ""} · <a class="lnk" id="restart">Restart</a> · <a class="lnk" id="toreport">Report a problem</a></span>`;
   b.hidden = false;
 }
 
@@ -494,13 +509,16 @@ const EV = {
   agent_down: "rabbit-agent not running", stalled: "OS3 has been quiet after a tool call", weekly_limit_high: "Weekly limit almost used",
   codex_unstable: "Model calls are unstable", update: "Update", update_failed: "Update failed", codex_update: "Codex CLI update",
   selffix: "Self fix", selffix_action: "Self fix action", loop_nudge: "Nudged a screenshot loop", watchdog_error: "Watchdog error",
-  limit_high: "Limit almost used (90%+)", fallback: "Switched to the fallback model", selftest: "Setup test",
+  limit_high: "Limit almost used (90%+)", fallback: "Switched to the fallback model", selftest: "Setup test", user_report: "Problem reported",
   keepalive_error: "Keep-alive error",
   fix_failed: "Couldn't repair a tool call", verify_failed: "Double-check failed", false_unavailable_failed: "Retry failed",
 };
 let AV = "req";
 async function activity(st) {
-  document.addEventListener("click", (e) => { if (e.target.id === "restart") restartAgent(); });
+  document.addEventListener("click", (e) => {
+  if (e.target.id === "restart") restartAgent();
+  if (e.target.id === "toreport") { document.querySelector('nav button[data-tab="help"]').click(); setTimeout(() => { $("#reportcard").scrollIntoView({behavior: "smooth"}); $("#rtext").focus(); }, 60); }
+});
 document.querySelectorAll("#aseg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === AV));
   $("#techlbl").hidden = AV !== "events";
   if (AV === "req") {

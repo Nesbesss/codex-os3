@@ -201,6 +201,10 @@ def handle(method, path, data, q, cfg):
     if method == "POST" and path == "selffix":
         from . import selffix
         return 200, selffix.diagnose(cfg, str(data.get("problem", "")), str(data.get("step", ""))), J
+    if method == "POST" and path == "report":
+        from . import report
+        ok, msg = report.user_report(str(data.get("text", ""))[:3000], bool(data.get("diagnostics", True)))
+        return 200, {"ok": ok, "message": msg}, J
     if method == "POST" and path == "selftest":
         from . import selffix
         return 200, selffix.selftest(cfg), J

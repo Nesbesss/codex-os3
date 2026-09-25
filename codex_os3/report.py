@@ -40,6 +40,32 @@ def maybe_send(kind, msg, level="info"):
         pass  # reporting must never break anything
 
 
+def user_report(text, diagnostics=True):
+    """"Report a problem" from the dashboard: sent because the user asked, whatever share_reports
+    says. -> (ok, message)."""
+    text = (text or "").strip()
+    if not text or not URL:
+        return False, "nothing to send"
+    now = time.time()
+    sent = [t for t in (store.kv_get("user_report_times") or []) if now - t < 3600]
+    if len(sent) >= 5:
+        return False, "you sent 5 reports this hour; please try again later"
+    store.kv_set("user_report_times", sent + [now])
+    from .export import redact
+    body = f"📝 **user_report** · os3-router {__version__} · {platform.system()} {platform.release()} · install `{install_id()}`\n>>> {redact(text)[:1200]}"
+    if diagnostics:
+        from . import onboarding
+        cfg = config.load()
+        steps = "; ".join(f"{s['id']}={s['state']}" for s in onboarding.status(cfg)["steps"])
+        errs = store.q("SELECT kind, msg FROM events WHERE level IN ('warn','error') AND ts > ? ORDER BY ts DESC LIMIT 6",
+                       (now - 86400,))
+        body += (f"\n**setup:** {steps}\n**recent problems:**\n" +
+                 ("\n".join(f"- {e['kind']}: {redact(e['msg'])[:140]}" for e in errs) or "- none"))
+    threading.Thread(target=_post, args=(body[:1990],), daemon=True).start()
+    store.event("user_report", text[:200], source="ui")
+    return True, "Sent. Thank you!"
+
+
 def _post(text):
     try:
         urllib.request.urlopen(urllib.request.Request(

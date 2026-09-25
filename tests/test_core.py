@@ -383,6 +383,28 @@ class ReportTest(unittest.TestCase):
             config.save({"share_reports": None})
 
 
+class UserReportTest(unittest.TestCase):
+    def test_sent_on_request_redacted_limited(self):
+        from codex_os3 import config, report
+        sent = []
+        orig, report._post = report._post, sent.append
+        try:
+            config.save({"share_reports": False})  # an explicit report is sent anyway
+            store.kv_set("user_report_times", [])
+            ok, _ = report.user_report("broken after update, key cx-0123456789abcdef0123456789abcdef")
+            time.sleep(0.2)
+            self.assertTrue(ok)
+            self.assertIn("user_report", sent[0])
+            self.assertNotIn("0123456789abcdef", sent[0])
+            for _ in range(6):
+                ok, msg = report.user_report("again", diagnostics=False)
+            self.assertFalse(ok)
+            self.assertFalse(report.user_report("   ")[0])
+        finally:
+            report._post = orig
+            config.save({"share_reports": None})
+
+
 class AgentKeepaliveRuleTest(unittest.TestCase):
     def test_disconnected_for_minutes_restarts(self):
         s = Watchdog.snap(Watchdog(), last_response=None, agent={"running": True, "status": "disconnected"},
