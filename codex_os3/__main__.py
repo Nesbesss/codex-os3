@@ -48,6 +48,14 @@ def main(argv):
         ui_api.request_reload()
         print("reload requested")
         return 0
+    if cmd == "update":  # check for a new release now instead of within 6 h
+        from . import store, updater
+        if not updater.managed():
+            print("not an installer-made install (e.g. a git checkout): update with git pull")
+            return 1
+        store.kv_set("update_checked", 0)
+        print("update check requested; see the dashboard's Watchdog events")
+        return 0
     if cmd == "key":
         cfg = config.save({"api_key": config.new_key()}) if "--rotate" in argv else config.ensure_key()
         print(cfg["api_key"])

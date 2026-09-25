@@ -257,6 +257,20 @@ def serve_worker():
     engine.log(f"worker {os.getpid()} listening on {cfg['bind']}:{cfg['port']}")
     store.event("worker_start", f"worker {os.getpid()} on {cfg['bind']}:{cfg['port']}", source="worker")
     srv.serve_forever(poll_interval=0.5)
+    # Linux spreads SO_REUSEPORT connections over both workers' sockets: whatever already waits
+    # in this socket's queue would be reset by close(), so serve it first
+    srv.socket.settimeout(0)
+    quiet, end = 0, time.time() + 3
+    while quiet < 4 and time.time() < end:
+        try:
+            conn, addr = srv.socket.accept()
+        except OSError:
+            quiet += 1
+            time.sleep(0.05)
+            continue
+        quiet = 0
+        conn.settimeout(None)
+        srv.process_request(conn, addr)
     srv.socket.close()  # new connections now go to the new worker only
     deadline = time.time() + 900
     while srv.active and time.time() < deadline:

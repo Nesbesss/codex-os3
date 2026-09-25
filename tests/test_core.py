@@ -270,5 +270,34 @@ class ClaudeBackendTest(unittest.TestCase):
         self.assertIsNone(C.limits({}))
 
 
+class UpdaterTest(unittest.TestCase):
+    def test_install_from_release_archive(self):
+        import io, tarfile
+        from codex_os3 import config, updater
+        self.assertFalse(updater.managed())  # a checkout never updates itself
+        self.assertTrue(updater.ver("v0.10.0") > updater.ver("0.9.9"))
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w:gz") as t:
+            for name, data in (("os3-router-0.9.0/codex_os3/__init__.py", b'__version__ = "0.9.0"\n'),
+                               ("os3-router-0.9.0/NEW.txt", b"new")):
+                info = tarfile.TarInfo(name)
+                info.size = len(data)
+                t.addfile(info, io.BytesIO(data))
+        app = tempfile.mkdtemp()
+        with open(os.path.join(app, "OLD.txt"), "w") as f:
+            f.write("old")
+        orig, updater._get = updater._get, lambda url, timeout=60: buf.getvalue()
+        try:
+            with self.assertRaises(RuntimeError):  # archive doesn't hold the tagged version
+                updater.install("v0.9.1", app=app, run_tests=False)
+            self.assertFalse(os.path.exists(os.path.join(app, "NEW.txt")))
+            updater.install("v0.9.0", app=app, run_tests=False)
+        finally:
+            updater._get = orig
+        self.assertTrue(os.path.exists(os.path.join(app, "NEW.txt")))
+        self.assertTrue(os.path.exists(os.path.join(app + ".prev", "OLD.txt")))
+        self.assertTrue(os.path.exists(os.path.join(config.HOME, "reload.request")))
+
+
 if __name__ == "__main__":
     unittest.main()

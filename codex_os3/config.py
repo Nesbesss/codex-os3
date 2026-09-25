@@ -29,6 +29,7 @@ DEFAULTS = {
     "webhook": "",            # optional ntfy/Telegram-style URL for watchdog alerts
     "watchdog": True,
     "restart_agent": True,    # watchdog may restart a stuck rabbit-agent
+    "auto_update": True,      # install new releases from GitHub (tested first, zero downtime)
 }
 
 _lock = threading.Lock()

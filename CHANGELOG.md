@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2 (2026-09-25)
+- **Automatic updates:** checks GitHub every 6 h; a new release is installed only after its own test suite
+  passes on your machine, the previous version is kept in `app.prev`, and the switch is zero-downtime.
+  Off in Settings; `update` checks right away
+- Linux: a reload no longer resets a connection that was waiting in the old worker's queue
+
 ## 0.2.1 (2026-09-25)
 - Watchdog no longer restarts the rabbit-agent while OS3 is still reaching the router (a request running,
   cancelled or failed after our reply counts as a sign of life); seen in a tester's log

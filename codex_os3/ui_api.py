@@ -6,7 +6,7 @@ from .platform_util import pid_alive
 
 J = "application/json"
 EDITABLE = {"model", "effort", "bind", "port", "captures", "retention_days", "jev_key",
-            "webhook", "watchdog", "restart_agent", "max_codex", "max_images", "role_routing", "roles"}
+            "webhook", "watchdog", "restart_agent", "auto_update", "max_codex", "max_images", "role_routing", "roles"}
 
 
 def clean_roles(value):
@@ -119,7 +119,7 @@ def handle(method, path, data, q, cfg):
         wd = store.kv_get("watchdog_last") or {}
         running = store.q("SELECT COUNT(*) n FROM requests WHERE status='running' AND ts > ?", (time.time() - 900,))[0]["n"]
         return 200, {"version": __version__, "time": time.time(), "limits": lims.get("codex") or next(iter(lims.values()), None),
-                     "limits_all": lims,
+                     "limits_all": lims, "latest_release": store.kv_get("update_latest"),
                      "usage_limit": store.kv_get("usage_limit"), "agent": os3.status(),
                      "watchdog": wd, "running": running, "model": cfg["model"],
                      "endpoint": f"http://localhost:{cfg['port']}/v1"}, J

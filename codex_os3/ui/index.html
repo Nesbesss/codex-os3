@@ -265,6 +265,7 @@ async function tasks() {
 
 const FIELDS = [
   ["watchdog", "Watchdog", "bool", null, "Detects a dead rabbit-agent tunnel, limits and stuck tasks."],
+  ["auto_update", "Automatic updates", "bool", null, "Checks GitHub every 6 h; a new release is installed only if its tests pass on this machine, without interrupting OS3."],
   ["restart_agent", "Let the watchdog restart a stuck rabbit-agent", "bool"],
   ["jev_key", "TypeSafe Jev key (optional)", "password", null, "Gives the watchdog a second opinion on ambiguous situations."],
   ["webhook", "Alert webhook (optional)", "text", null, "e.g. https://ntfy.sh/your-topic — receives watchdog alerts."],

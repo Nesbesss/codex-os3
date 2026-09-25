@@ -173,8 +173,12 @@ def loop(stop):
     while not stop.is_set():
         cfg = config.load()
         try:
-            if cfg.get("watchdog", True) and _owner(me):
+            owner = _owner(me)
+            if cfg.get("watchdog", True) and owner:
                 tick(cfg)
+            if owner:
+                from . import updater
+                updater.maybe(cfg)
             if time.time() - last_prune > 3600:
                 store.prune(cfg["retention_days"])
                 last_prune = time.time()
