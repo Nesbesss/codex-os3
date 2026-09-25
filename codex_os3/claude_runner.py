@@ -102,6 +102,8 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
         return (json.dumps(so) if so is not None else result.get("result") or ""), usage, thread, rl
     msg = ((result or {}).get("result") or " | ".join(map(str, (result or {}).get("errors") or []))
            or ("\n".join(err) or "no output from claude")[-600:])
+    if "usage credits" in msg.lower() or "not available" in msg.lower() and "model" in msg.lower():
+        raise UsageLimit(msg, plan=True)  # e.g. Fable on Pro: "requires usage credits"
     if info.get("status") == "rejected" or "limit" in msg.lower() and ("usage" in msg.lower() or "reset" in msg.lower()):
         reset = info.get("resetsAt")
         raise UsageLimit(msg, time.strftime("%H:%M", time.localtime(reset)) if reset else "")

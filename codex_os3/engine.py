@@ -114,6 +114,10 @@ class Turn:
             when = f" — resets at {e.resets}" if e.resets else ""
             self.ev("usage_limit", str(e)[:200], "error")
             name = "Claude" if self.backend == "claude" else "Codex"
+            if e.plan:
+                return {"role": "assistant", "content": f"⚠️ {self.model.rsplit('-', 1)[0]} is not included in your "
+                        f"{name} plan: {str(e)[:200]} Pick another model in the router dashboard "
+                        "(Settings → Models). Nothing was done."}, "stop"
             store.kv_set("usage_limit", {"ts": time.time(), "resets": e.resets, "backend": self.backend})
             return {"role": "assistant", "content": f"⚠️ {name} usage limit reached{when}. "
                     "Nothing was done; try again after the reset."}, "stop"

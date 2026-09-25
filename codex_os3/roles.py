@@ -86,7 +86,7 @@ CLAUDE = [
      "efforts": _E, "default_effort": "medium", "backend": "claude"},
     {"slug": "claude-opus-5-5", "name": "Claude Opus 5.5", "description": "Claude Code · most capable; uses the most of your limits.",
      "efforts": _E, "default_effort": "medium", "backend": "claude"},
-    {"slug": "claude-fable-5-1", "name": "Claude Fable 5.1", "description": "Claude Code.",
+    {"slug": "claude-fable-5-1", "name": "Claude Fable 5.1", "description": "Claude Code · not included in Pro (needs usage credits).",
      "efforts": _E, "default_effort": "medium", "backend": "claude"},
     {"slug": "claude-haiku-4-5", "name": "Claude Haiku 4.5", "description": "Claude Code · fastest and lightest.",
      "efforts": ["low", "medium", "high"], "default_effort": "low", "backend": "claude"},

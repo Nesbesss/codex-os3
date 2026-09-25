@@ -27,9 +27,10 @@ class CodexHung(RuntimeError):
 class UsageLimit(RuntimeError):
     """The subscription's usage limit is reached."""
 
-    def __init__(self, msg, resets=""):
+    def __init__(self, msg, resets="", plan=False):
         super().__init__(msg)
         self.resets = resets
+        self.plan = plan  # the model is not part of the user's plan at all
 
 
 def slots(n):
