@@ -122,6 +122,7 @@ else
   tar xzf "$TGZ" -C "$NEW" --strip-components 1 && rm -f "$TGZ"
 fi
 [ -f "$NEW/codex_os3/__init__.py" ] || die "download looks incomplete"
+OLD_VERSION=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' "$APP_DIR/codex_os3/__init__.py" 2>/dev/null || true)
 rm -rf "$APP_DIR.old"; [ -d "$APP_DIR" ] && mv "$APP_DIR" "$APP_DIR.old"; mv "$NEW" "$APP_DIR"; rm -rf "$APP_DIR.old"
 VERSION="$("$PY" -c "import sys; sys.path.insert(0, '$APP_DIR'); import codex_os3; print(codex_os3.__version__)")"
 ok "os3-router $VERSION in $APP_DIR"
@@ -129,6 +130,10 @@ ok "os3-router $VERSION in $APP_DIR"
 cd "$APP_DIR"
 [ -n "$PORT" ] && "$PY" -c "from codex_os3 import config; config.save({'port': int('$PORT')})"
 "$PY" -c "from codex_os3 import config; config.save({'codex_bin': '$CODEX'}); config.ensure_key()"
+# this installer brings the matching menu bar app itself; the router only updates apps on later updates
+"$PY" -c "from codex_os3 import store, __version__; store.kv_set('apps_version', __version__)"
+# "what's new" popup: after an upgrade, everything since the old version; nothing on a fresh install
+"$PY" -c "from codex_os3 import store, __version__; store.kv_set('whatsnew_seen', '${OLD_VERSION}' or __version__)"
 CLAUDE=$(command -v claude || true)  # optional: lets roles use Claude models via Claude Code
 [ -n "$CLAUDE" ] && "$PY" -c "from codex_os3 import config; config.save({'claude_bin': '$CLAUDE'})" && ok "Claude Code found: $CLAUDE"
 PORT="$("$PY" -c "from codex_os3 import config; print(config.load()['port'])")"

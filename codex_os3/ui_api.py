@@ -100,6 +100,38 @@ def doctor(cfg):
     ]
 
 
+def _prev_version():
+    """The version before the last automatic update (kept in app.prev), if any."""
+    from . import updater
+    try:
+        with open(os.path.join(updater.APP + ".prev", "codex_os3", "__init__.py")) as f:
+            return re.search(r'__version__ = "([^"]+)"', f.read()).group(1)
+    except (OSError, AttributeError):
+        return None
+
+
+def whatsnew():
+    """Changelog sections the user hasn't seen yet: after an update, the web UI, the menu bar
+    app and the tray show them once (whichever is open first; Continue marks them seen)."""
+    from . import updater
+    seen = store.kv_get("whatsnew_seen") or _prev_version()
+    sections = []
+    try:
+        with open(os.path.join(updater.APP, "CHANGELOG.md"), encoding="utf-8") as f:
+            parts = re.split(r"^## ", f.read(), flags=re.M)[1:]
+    except OSError:
+        parts = []
+    for p in parts:
+        head, _, body = p.partition("\n")
+        v = head.split()[0]
+        if updater.ver(v) > updater.ver(__version__) or (seen and updater.ver(v) <= updater.ver(seen)):
+            continue
+        sections.append({"version": v, "title": head.strip(), "body": body.strip()})
+        if not seen:  # fresh install: just the current version
+            break
+    return {"version": __version__, "show": seen != __version__ and bool(sections), "sections": sections[:6]}
+
+
 def usage(hours):
     since = time.time() - hours * 3600
     bucket = 3600 if hours <= 48 else 86400
@@ -121,6 +153,7 @@ def handle(method, path, data, q, cfg):
         running = store.q("SELECT COUNT(*) n FROM requests WHERE status='running' AND ts > ?", (time.time() - 900,))[0]["n"]
         return 200, {"version": __version__, "time": time.time(), "limits": lims.get("codex") or next(iter(lims.values()), None),
                      "limits_all": lims, "latest_release": store.kv_get("update_latest"),
+                     "whats_new": whatsnew()["show"],
                      "usage_limit": store.kv_get("usage_limit"), "agent": os3.status(),
                      "watchdog": wd, "running": running, "model": cfg["model"],
                      "endpoint": f"http://localhost:{cfg['port']}/v1"}, J
@@ -142,6 +175,11 @@ def handle(method, path, data, q, cfg):
         if not re.fullmatch(r"[0-9a-f]{8,40}", task):
             return 400, {"error": "bad task id"}, J
         return 200, export.build(task, cfg), "application/zip"
+    if method == "GET" and path == "whatsnew":
+        return 200, whatsnew(), J
+    if method == "POST" and path == "whatsnew/seen":
+        store.kv_set("whatsnew_seen", __version__)
+        return 200, {"ok": True}, J
     if method == "GET" and path == "models":
         return 200, roles.available_models(), J
     if method == "GET" and path == "doctor":

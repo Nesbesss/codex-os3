@@ -340,5 +340,22 @@ class WindowsBinTest(unittest.TestCase):
         self.assertEqual(native_bin(exe, windows=True), exe)
 
 
+class WhatsNewTest(unittest.TestCase):
+    def test_changelog_since_last_seen(self):
+        from codex_os3 import __version__, ui_api, updater
+        store.kv_set("whatsnew_seen", None)
+        w = ui_api.whatsnew()  # fresh install (no app.prev): only the current version
+        self.assertEqual([x["version"] for x in w["sections"]], [__version__])
+        store.kv_set("whatsnew_seen", "0.2.2")
+        w = ui_api.whatsnew()
+        vs = [x["version"] for x in w["sections"]]
+        self.assertTrue(w["show"])
+        self.assertIn("0.2.3", vs)
+        self.assertNotIn("0.2.2", vs)
+        self.assertTrue(all(updater.ver(v) > updater.ver("0.2.2") for v in vs))
+        store.kv_set("whatsnew_seen", __version__)
+        self.assertFalse(ui_api.whatsnew()["show"])
+
+
 if __name__ == "__main__":
     unittest.main()

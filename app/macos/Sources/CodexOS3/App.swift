@@ -48,6 +48,11 @@ struct UsageLimit: Decodable { let ts: Double; let resets: String? }
 struct Status: Decodable {
     let version: String; let limits: Limits?; let agent: Agent?; let watchdog: Watchdog?
     let running: Int; let model: String; let endpoint: String; let usage_limit: UsageLimit?
+    let whats_new: Bool?
+}
+struct WhatsNew: Decodable {
+    struct Section: Decodable { let title: String; let body: String }
+    let version: String; let show: Bool; let sections: [Section]
 }
 struct Config: Decodable { let api_key: String; let port: Int; let model: String }
 
@@ -58,6 +63,7 @@ final class RouterModel: ObservableObject {
     @Published var busy: String?
     @Published var launchAtLogin = SMAppService.mainApp.status == .enabled
     private var timer: Timer?
+    private var showingWhatsNew = false
 
     static let home = (ProcessInfo.processInfo.environment["CODEX_OS3_HOME"]
                        ?? NSString(string: "~/.codex-os3").expandingTildeInPath)
@@ -98,6 +104,7 @@ final class RouterModel: ObservableObject {
                 let (d, _) = try await URLSession.shared.data(from: URL(string: base + "/api/status")!)
                 status = try JSONDecoder().decode(Status.self, from: d)
                 error = nil
+                if status?.whats_new == true && !showingWhatsNew { showWhatsNew() }
             } catch {
                 status = nil
                 self.error = "Router not running"
@@ -157,6 +164,47 @@ final class RouterModel: ObservableObject {
 
     func reload() {
         Task { _ = try? await post("reload"); flash("Router reload requested"); refresh() }
+    }
+
+    /// After an update: the changelog since the version last seen, once (the web UI or the
+    /// Windows tray may show it instead; Continue marks it seen for all of them).
+    func showWhatsNew() {
+        showingWhatsNew = true
+        Task {
+            defer { showingWhatsNew = false }
+            guard let (d, _) = try? await URLSession.shared.data(from: URL(string: base + "/api/whatsnew")!),
+                  let w = try? JSONDecoder().decode(WhatsNew.self, from: d), w.show else { return }
+            let text = w.sections.map { $0.title + "\n" + Self.plain($0.body) }.joined(separator: "\n\n")
+            let view = NSTextView(frame: NSRect(x: 0, y: 0, width: 520, height: 320))
+            view.string = text
+            view.isEditable = false
+            view.font = .systemFont(ofSize: 13)
+            view.textContainerInset = NSSize(width: 6, height: 6)
+            let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 520, height: 320))
+            scroll.documentView = view
+            scroll.hasVerticalScroller = true
+            let alert = NSAlert()
+            alert.messageText = "What's new in os3-router \(w.version)"
+            alert.informativeText = "os3-router was updated."
+            alert.accessoryView = scroll
+            alert.addButton(withTitle: "Continue")
+            alert.addButton(withTitle: "Open dashboard")
+            NSApp.activate(ignoringOtherApps: true)
+            let r = alert.runModal()
+            _ = try? await post("whatsnew/seen")
+            if r == .alertSecondButtonReturn { openDashboard() }
+        }
+    }
+
+    /// Changelog markdown -> plain bullets
+    static func plain(_ body: String) -> String {
+        var items: [String] = []
+        for line in body.components(separatedBy: "\n") {
+            let t = line.trimmingCharacters(in: .whitespaces)
+            if t.hasPrefix("- ") { items.append("• " + t.dropFirst(2)) }
+            else if !t.isEmpty, !items.isEmpty { items[items.count - 1] += " " + t }
+        }
+        return items.joined(separator: "\n").replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "`", with: "")
     }
 
     func openDashboard(_ tab: String = "") {

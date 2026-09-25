@@ -1,21 +1,26 @@
 # Changelog
 
+## 0.2.6 (2026-09-25)
+- **This screen:** after every update you see what's new, once, in the dashboard, the menu bar app (Mac)
+  or the tray icon (Windows). Continue hides it everywhere
+- **Everything updates itself:** the router checks for a new version every 30 minutes, tests it on your
+  machine first and switches over without interrupting OS3; the menu bar app and tray icon now come along too
+
 ## 0.2.5 (2026-09-25)
-- Windows: fixed "[WinError 193] %1 is not a valid Win32 application". The installer saved npm's `codex.ps1`
-  shim, which Windows can't start; the router now runs npm's native `codex.exe` (or the `.cmd` shim) whatever
-  path is saved, and the installer saves a runnable path. Reported by a tester
+- **Windows:** fixed the "[WinError 193] %1 is not a valid Win32 application" error; no more editing
+  config.json by hand. Thanks to the tester who reported it
 
 ## 0.2.4 (2026-09-25)
-- Update check every 30 min
+- Checks for updates every 30 minutes (was every 6 hours)
 
 ## 0.2.3 (2026-09-25)
-- **OS3's reasoning sliders are used:** the effort OS3 sends (`reasoning_effort`, Small / Standard) now
-  decides the effort; Background keeps the dashboard's effort (OS3 has no Background slider)
-- OS3's `tool_choice` (e.g. "call emit_facts now") is passed to the model, with one retry if it answers in text
-  instead; fixes occasional false "emit_facts is not available"
-- Setup page shows the models actually used per role; OS3's model id is only a label
-- Doctor checks the Codex CLI the router actually runs (no false "version ✗" from an old copy on PATH)
-- Update check every hour instead of every 6 h
+- **OS3's reasoning sliders now count:** the effort you set in OS3 (Small / Standard) is the one used.
+  Background keeps the effort from the dashboard, because OS3 has no slider for it
+- Fewer "tool not available" hiccups: when OS3 requires a specific tool (like saving a memory), the model
+  is now told so
+- The Setup page shows which models are actually used; the model id you entered in OS3 is only a label,
+  keep it as is
+- No more false "Codex CLI version ✗" on the Setup page
 
 ## 0.2.2 (2026-09-25)
 - **Automatic updates:** checks GitHub every 6 h; a new release is installed only after its own test suite

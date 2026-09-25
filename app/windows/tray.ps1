@@ -48,6 +48,26 @@ $green = Dot ([System.Drawing.Color]::FromArgb(12, 163, 12))
 $amber = Dot ([System.Drawing.Color]::FromArgb(250, 178, 25))
 $red = Dot ([System.Drawing.Color]::FromArgb(208, 59, 59))
 
+function Plain($body) {  # changelog markdown -> plain bullets
+    $out = New-Object System.Collections.Generic.List[string]
+    foreach ($l in ($body -split "`n")) {
+        if ($l -match '^\s*- ') { $out.Add("• " + ($l -replace '^\s*- ', '')) }
+        elseif ($l.Trim() -and $out.Count) { $out[$out.Count - 1] += " " + $l.Trim() }
+    }
+    (($out -join "`n") -replace '\*\*', '') -replace '`', ''
+}
+$script:wnShown = $false
+function WhatsNew {  # after an update, once (the web UI or menu bar app may show it instead)
+    $script:wnShown = $true
+    try {
+        $w = Api "whatsnew"
+        if (-not $w.show) { return }
+        $text = ($w.sections | ForEach-Object { $_.title + "`n" + (Plain $_.body) }) -join "`n`n"
+        [System.Windows.Forms.MessageBox]::Show("os3-router was updated.`n`n$text", "What's new in os3-router $($w.version)") | Out-Null
+        Post "whatsnew/seen" | Out-Null
+    } catch {}
+}
+
 function Update {
     try {
         $s = Api "status"
@@ -57,6 +77,7 @@ function Update {
         $statusItem.Text = if ($agentOk) { "rabbit-agent connected · $($s.model)" } else { "rabbit-agent: $($s.agent.status)" }
         $limitItem.Text = "5h: $([math]::Round($s.limits.p_pct))%  ·  weekly: $([math]::Round($s.limits.s_pct))%"
         $icon.Text = "os3-router — $($statusItem.Text)".Substring(0, [Math]::Min(63, "os3-router — $($statusItem.Text)".Length))
+        if ($s.whats_new -and -not $script:wnShown) { WhatsNew }
     } catch {
         $icon.Icon = $red; $statusItem.Text = "router not running"; $icon.Text = "os3-router — router not running"
     }

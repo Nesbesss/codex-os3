@@ -58,10 +58,46 @@ def install(tag, app=APP, run_tests=True):
     open(os.path.join(config.HOME, "reload.request"), "w").close()  # zero-downtime switch
 
 
+def update_apps(tag):
+    """The companion apps: the macOS menu bar app is a separate download; the Windows tray runs
+    tray.ps1 from the updated files and only needs a restart. Failures never fail the update."""
+    if sys.platform == "darwin":
+        apps = os.path.expanduser("~/Applications")
+        old = [os.path.join(apps, n) for n in ("OS3 Router.app", "Codex OS3.app") if os.path.isdir(os.path.join(apps, n))]
+        if not old:
+            return  # installed with --no-app
+        tmp = tempfile.mkdtemp(prefix="os3-router-app-")
+        try:
+            z = os.path.join(tmp, "app.zip")
+            with open(z, "wb") as f:
+                f.write(_get(f"https://github.com/{REPO}/releases/download/{tag}/OS3Router-macos.zip", 120))
+            subprocess.run(["ditto", "-x", "-k", z, tmp], check=True, timeout=120)
+            new = os.path.join(tmp, "OS3 Router.app")
+            if not os.path.isdir(new):
+                raise RuntimeError("release zip has no OS3 Router.app")
+            subprocess.run(["pkill", "-f", "Contents/MacOS/CodexOS3"], timeout=10)
+            for a in old:
+                shutil.rmtree(a, ignore_errors=True)
+            shutil.move(new, os.path.join(apps, "OS3 Router.app"))
+            subprocess.run(["open", os.path.join(apps, "OS3 Router.app")], timeout=30)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    elif sys.platform == "win32":
+        for a in ("/End", "/Run"):
+            subprocess.run(["schtasks", a, "/TN", "codex-os3 tray"], capture_output=True, timeout=30)
+
+
 def maybe(cfg):
     """Called from the watchdog loop (one owner at a time)."""
     if not cfg.get("auto_update", True) or not managed():
         return
+    if store.kv_get("apps_version") != __version__:  # first run of this version: bring the apps along
+        store.kv_set("apps_version", __version__)  # (done by the new version, whatever did the update)
+        try:
+            update_apps("v" + __version__)
+            store.event("update", f"menu bar / tray app updated to {__version__}", source="updater")
+        except Exception as e:
+            store.event("update_failed", f"menu bar / tray app: {type(e).__name__}: {e}"[:300], source="updater", level="warn")
     if time.time() - (store.kv_get("update_checked") or 0) < EVERY_S:
         return
     store.kv_set("update_checked", time.time())

@@ -81,6 +81,8 @@ if ($env:CODEX_OS3_SRC) {
 if (-not (Test-Path (Join-Path $New "codex_os3\__init__.py"))) { Die "download looks incomplete" }
 $Running = $false
 try { Invoke-RestMethod "http://127.0.0.1:$(if ($Port) { $Port } else { 11435 })/health" -TimeoutSec 2 | Out-Null; $Running = $true } catch {}
+$OldVersion = ""
+try { $OldVersion = ([regex]'__version__ = "([^"]+)"').Match((Get-Content (Join-Path $AppDir "codex_os3\__init__.py") -Raw)).Groups[1].Value } catch {}
 Remove-Item -Recurse -Force $AppDir -ErrorAction SilentlyContinue
 Move-Item $New $AppDir
 Ok "installed to $AppDir"
@@ -89,6 +91,10 @@ Push-Location $AppDir
 $env:CODEX_OS3_HOME = $HomeDir
 if ($Port) { & $Py -c "from codex_os3 import config; config.save({'port': $Port})" }
 & $Py -c "from codex_os3 import config; config.save({'codex_bin': r'$Codex'}); config.ensure_key()"
+# this installer sets up the matching tray itself; the router only restarts it on later updates
+& $Py -c "from codex_os3 import store, __version__; store.kv_set('apps_version', __version__)"
+# "what's new" popup: after an upgrade, everything since the old version; nothing on a fresh install
+& $Py -c "from codex_os3 import store, __version__; store.kv_set('whatsnew_seen', '$OldVersion' or __version__)"
 $Port = [int](& $Py -c "from codex_os3 import config; print(config.load()['port'])")
 
 # --- service: a Task Scheduler task at logon, restarted if it stops ---------------------
