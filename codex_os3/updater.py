@@ -91,6 +91,11 @@ def maybe(cfg):
     """Called from the watchdog loop (one owner at a time)."""
     if not cfg.get("auto_update", True) or not managed():
         return
+    if store.kv_get("codex_outdated"):  # Codex refused a model as too old: update it right away
+        from . import selffix
+        store.kv_set("codex_outdated", None)
+        ok, msg = selffix.update_codex(cfg)
+        store.event("codex_update", msg, source="updater", level="info" if ok else "warn")
     if store.kv_get("apps_version") != __version__:  # first run of this version: bring the apps along
         store.kv_set("apps_version", __version__)  # (done by the new version, whatever did the update)
         try:
@@ -104,6 +109,11 @@ def maybe(cfg):
     try:
         tag = latest()
         store.kv_set("update_latest", tag)
+        from . import selffix, ui_api
+        v = ui_api.codex_info(cfg, fresh=True)["version"]
+        if v and ver(v) < ver(ui_api.MIN_CODEX):
+            ok, msg = selffix.update_codex(cfg)
+            store.event("codex_update", msg, source="updater", level="info" if ok else "warn")
         if ver(tag) <= ver(__version__):
             return
         store.event("update", f"installing {tag} (running {__version__})", source="updater")

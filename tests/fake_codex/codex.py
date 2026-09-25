@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Stand-in for the Codex CLI in tests: same flags, JSON events and rollout files, no network.
 Prompt triggers: FAKE_LIMIT (usage limit error), FAKE_HANG (sleep forever), FAKE_FINAL (final
-answer instead of a tool call), FAKE_BADJSON (invalid tool-call arguments)."""
+answer instead of a tool call), FAKE_BADJSON (invalid tool-call arguments), FAKE_LIMIT_SOL (usage
+limit only for *sol* models)."""
 import json, os, sys, time, uuid
 
 a = sys.argv[1:]
@@ -28,7 +29,8 @@ ev = lambda **e: print(json.dumps(e), flush=True)
 
 ev(type="thread.started", thread_id=thread)
 ev(type="turn.started")
-if "FAKE_LIMIT" in prompt:
+model = a[a.index("-m") + 1] if "-m" in a else ""
+if "FAKE_LIMIT" in prompt and ("FAKE_LIMIT_SOL" not in prompt or "sol" in model):
     ev(type="error", message="You've hit your usage limit. Upgrade to Pro or try again at 9:11 PM.")
     ev(type="turn.failed", error={"message": "usage limit"})
     sys.exit(1)

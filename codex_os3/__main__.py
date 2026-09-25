@@ -48,6 +48,10 @@ def main(argv):
         ui_api.request_reload()
         print("reload requested")
         return 0
+    if cmd == "keepalive":  # OS3 node without the router: keep its rabbit-agent connected
+        from . import watchdog
+        watchdog.keepalive()
+        return 0
     if cmd == "update":  # check for a new release now instead of within 6 h
         from . import store, updater
         if not updater.managed():

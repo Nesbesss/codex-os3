@@ -22,6 +22,77 @@
   }
 }
 * { box-sizing: border-box; }
+.wiz { max-width: 760px; margin: 0 auto; padding: 22px 26px 20px; }
+.wiz .bar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.wiz .bar i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+.wiz .stepno { font-size: 12px; color: var(--ink-3); margin-bottom: 18px; }
+.wiz h2.wt { font-size: 24px; margin: 0 0 8px; font-weight: 700; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.wiz .lead { font-size: 15px; color: var(--ink-2); margin: 0 0 16px; line-height: 1.55; }
+.wiz .big img { display: block; max-width: 100%; max-height: 460px; border-radius: 10px; border: 1px solid var(--ring); cursor: zoom-in; margin: 0 auto; }
+.wiz .big { display: flex; gap: 12px; justify-content: center; margin: 6px 0 4px; }
+.wiz .big figure { margin: 0; flex: 1; min-width: 0; } .wiz .big figcaption { text-align: center; font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+.wiz .nav { display: flex; align-items: center; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.wiz .nav .sp { flex: 1; } .wiz .nav a { color: var(--ink-3); font-size: 13px; cursor: pointer; }
+.wiz .btn.primary { padding: 8px 22px; font-size: 14px; }
+.wiz .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.wiz .choice button { text-align: left; padding: 16px; border-radius: 12px; font-size: 15px; }
+.wiz .choice small { display: block; color: var(--ink-3); font-size: 12px; margin-top: 4px; font-weight: 400; }
+.wiz .hero { font-size: 44px; line-height: 1; margin-bottom: 12px; }
+@media (max-width: 600px) { .wiz .choice { grid-template-columns: 1fr; } .wiz .big { flex-direction: column; } }
+main > section { max-width: 1040px; margin: 0 auto; }
+#settings, #help { max-width: 760px; }
+#settings .card, #help .card { max-width: none !important; }
+.hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.hd h2 { margin: 0; }
+a.lnk { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: none; }
+a.lnk:hover { text-decoration: underline; }
+.lim2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.lim2 .pct { font-size: 24px; font-weight: 650; } .lim2 .lbl { font-size: 12px; color: var(--ink-3); }
+.lim2 .meter { margin: 6px 0 4px; height: 8px; }
+.mrow { display: grid; grid-template-columns: 92px 1fr; gap: 2px 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.mrow:first-child { border-top: 0; } .mrow .r { color: var(--ink-3); } .mrow .e { grid-column: 2; color: var(--ink-3); font-size: 12px; }
+.pill2 { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 99px; background: var(--bg); border: 1px solid var(--ring); }
+.pill2.chat { color: var(--accent); } .pill2.worker { color: #a86cf0; } .pill2.background { color: var(--ink-3); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.dot.bad { background: var(--crit); } .dot.warn { background: var(--warn); } .dot.run { background: var(--accent); } .dot.info { background: var(--axis); }
+#techlbl[hidden] { display: none; }
+.banner .ag { font-size: 12px; color: var(--ink-3); }
+.seg { display: inline-flex; background: var(--bg); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: none; font: inherit; font-size: 13px; color: var(--ink-2); padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--ring); }
+td.what { max-width: 420px; }
+.check input[type=checkbox] { appearance: none; width: 32px; height: 18px; border-radius: 99px; background: var(--axis); position: relative; cursor: pointer; flex: none; transition: background .15s; margin: 0; }
+.check input[type=checkbox]::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; }
+.check input[type=checkbox]:checked { background: var(--accent); } .check input[type=checkbox]:checked::after { left: 16px; }
+.obsteps { list-style: none; margin: 8px 0 0; padding: 0; }
+.obsteps li { display: grid; grid-template-columns: 28px 1fr auto; gap: 4px 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+.obsteps li:first-child { border-top: 0; }
+.obsteps .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--axis); margin-top: 1px; }
+.obsteps [data-s="ok"] .ic { background: var(--good); } .obsteps [data-s="error"] .ic { background: var(--crit); } .obsteps [data-s="waiting"] .ic { background: var(--accent); }
+.obsteps b { font-weight: 600; } .obsteps .d { color: var(--ink-2); font-size: 13px; }
+.obsteps li.cur { background: linear-gradient(90deg, var(--accent-track), transparent 70%); border-radius: 8px; padding-left: 6px; }
+.gstep { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 16px 0; border-top: 1px solid var(--line); }
+.gstep:first-child { border-top: 0; }
+.gnum { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+.gstep.del .gnum { background: var(--crit); color: #fff; }
+.gstep h3 { margin: 2px 0 4px; font-size: 15px; } .gstep p { margin: 0 0 8px; color: var(--ink-2); }
+.shots { display: flex; gap: 10px; flex-wrap: wrap; }
+.shots figure { margin: 0; } .shots figcaption { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+.shots img { display: block; max-width: min(340px, 100%); max-height: 260px; border-radius: 8px; border: 1px solid var(--ring); cursor: zoom-in; }
+.chip { font: inherit; display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--ring); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 3px 4px 3px 8px; cursor: pointer; vertical-align: middle; }
+.chip code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; } .chip span { font-size: 12px; background: var(--surface); border: 1px solid var(--ring); border-radius: 6px; padding: 1px 6px; }
+.alert { border-radius: 10px; padding: 10px 12px; margin: 0 0 10px; font-size: 13px; }
+.alert.bad { background: color-mix(in srgb, var(--crit) 14%, transparent); } .alert.good { background: color-mix(in srgb, var(--good) 14%, transparent); }
+.faq { margin: 0 0 8px; padding-left: 18px; color: var(--ink-2); } .faq li { margin: 6px 0; }
+details.more { max-width: 760px; margin-left: auto !important; margin-right: auto; }
+details.more summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.banner { margin-bottom: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.banner .t { flex: 1; min-width: 220px; }
+label.f textarea { font: inherit; padding: 8px 9px; border-radius: 8px; border: 1px solid var(--ring); background: var(--surface); color: var(--ink); resize: vertical; }
+#lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.75); display: grid; place-items: center; padding: 20px; cursor: zoom-out; }
+#lightbox[hidden] { display: none; } #lightbox img { max-width: 100%; max-height: 100%; border-radius: 10px; }
+.cfggroup { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); margin: 18px 0 8px; }
+.cfggroup:first-child { margin-top: 0; }
 #whatsnew { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow: auto; display: flex;
   justify-content: center; padding: 48px 16px; }
 #whatsnew[hidden] { display: none; }
@@ -78,7 +149,9 @@ label.f { display: grid; gap: 4px; margin-bottom: 12px; font-size: 13px; color: 
 label.f input, label.f select { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--ring);
   background: var(--surface); color: var(--ink); max-width: 420px; }
 .rolegrid { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 10px 12px; align-items: start; margin: 6px 0 4px; }
-.rolegrid .rl { font-weight: 600; padding-top: 7px; } .rolegrid .desc { grid-column: 2 / 4; margin-top: -6px; }
+.rolegrid .rl { font-weight: 600; padding-top: 7px; }
+.rolegrid .fbl { font-size: 12px; color: var(--ink-3); padding-top: 8px; text-align: right; }
+.rolegrid select[data-k="fb"] { color: var(--ink-2); } .rolegrid .desc { grid-column: 2 / 4; margin-top: -6px; }
 .rolegrid select { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--ring); background: var(--surface); color: var(--ink); width: 100%; }
 @media (max-width: 600px) { .rolegrid { grid-template-columns: 1fr; } .rolegrid .desc { grid-column: auto; } }
 .roles-tbl td:first-child { text-transform: capitalize; }
@@ -96,67 +169,78 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
   <h1 style="display:flex;align-items:center;gap:8px"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iY29kZXgtb3MzIj4KICA8IS0tIG9yaWdpbmFsIG1hcms6IGEgdGVybWluYWwgcHJvbXB0ICg+Xykgd2hvc2UgY3Vyc29yIGJyYW5jaGVzIG9mZiBsaWtlIGEgcm91dGVyIC0tPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMxZjJhNDQiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMGIwZjFhIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJpbmsiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4MT0iMjQwIiB5MT0iMzQwIiB4Mj0iNzAwIiB5Mj0iNzAwIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZmZmZmZmIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2M5ZDZmZiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3QgeD0iNjQiIHk9IjY0IiB3aWR0aD0iODk2IiBoZWlnaHQ9Ijg5NiIgcng9IjIwMCIgZmlsbD0idXJsKCNiZykiLz4KICA8cmVjdCB4PSI2NC41IiB5PSI2NC41IiB3aWR0aD0iODk1IiBoZWlnaHQ9Ijg5NSIgcng9IjE5OS41IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS1vcGFjaXR5PSIuMDgiLz4KICA8IS0tIGNoZXZyb24gPiAtLT4KICA8cGF0aCBkPSJNMjU4IDM1MiBMNDM4IDUxMiBMMjU4IDY3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2luaykiIHN0cm9rZS13aWR0aD0iNzYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDwhLS0gY3Vyc29yIF8gdGhhdCByb3V0ZXM6IG9uZSBsaW5lIHNwbGl0dGluZyBpbnRvIHR3byBvdXRwdXRzIC0tPgogIDxwYXRoIGQ9Ik00ODggNjcyIEg2MjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNpbmspIiBzdHJva2Utd2lkdGg9Ijc2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNNjI4IDY3MiBDNjg4IDY3MiA3MDAgNTcyIDc3MCA1NzIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzZlYThmZiIgc3Ryb2tlLXdpZHRoPSI0NCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTYyOCA2NzIgQzY4OCA2NzIgNzAwIDc3MiA3NzAgNzcyIiBmaWxsPSJub25lIiBzdHJva2U9IiNhOGM4ZmYiIHN0cm9rZS13aWR0aD0iNDQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9Ijc3NiIgY3k9IjU3MiIgcj0iMzQiIGZpbGw9IiM2ZWE4ZmYiLz4KICA8Y2lyY2xlIGN4PSI3NzYiIGN5PSI3NzIiIHI9IjM0IiBmaWxsPSIjYThjOGZmIi8+Cjwvc3ZnPgo=" width="24" height="24" alt="">os3-router <span class="ver" id="ver"></span></h1>
   <nav role="tablist">
     <button data-tab="dash" aria-selected="true">Dashboard</button>
+    <button data-tab="activity">Activity</button>
     <button data-tab="setup">Setup</button>
-    <button data-tab="watch">Watchdog</button>
-    <button data-tab="tasks">Tasks &amp; export</button>
     <button data-tab="settings">Settings</button>
+    <button data-tab="help">Get help</button>
   </nav>
   <span class="pill" id="health">…</span>
 </header>
 <main>
 <section id="dash">
+  <div class="card banner" id="banner" hidden></div>
   <div class="grid">
-    <div class="card"><h2>5-hour window</h2><div id="lim5"><span class="muted">no data yet — appears after the first request</span></div></div>
-    <div class="card"><h2>Weekly limit</h2><div id="limw"><span class="muted">no data yet</span></div></div>
-    <div class="card"><h2 id="tokh">Tokens · last 24 h</h2><div id="tok"></div></div>
-    <div class="card"><h2>rabbit-agent</h2><div id="agent"></div></div>
+    <div id="subs" style="display:contents"></div>
+    <div class="card"><div class="hd"><h2>Models</h2><a class="lnk" data-go="settings">Change</a></div><div id="dmodels"></div></div>
+    <div class="card"><h2 id="tokh">Tokens</h2><div id="tok"></div></div>
   </div>
   <div class="card" style="margin-top:14px">
-    <div class="row" style="margin:0 0 6px;justify-content:space-between">
-      <h2 style="margin:0">Input tokens per hour</h2>
-      <select id="range" class="btn"><option value="24">last 24 h</option><option value="72">last 3 days</option><option value="168">last 7 days</option></select>
-    </div>
+    <div class="hd"><h2>Input tokens</h2>
+      <select id="range" class="btn"><option value="24">last 24 h</option><option value="72">last 3 days</option><option value="168">last 7 days</option></select></div>
     <div class="chart" id="chart"></div>
     <details><summary>Show as table</summary><div class="tbl" id="charttbl"></div></details>
   </div>
-  <div class="card" style="margin-top:14px"><h2>Recent requests</h2><div class="tbl" id="reqs"></div></div>
+  <div class="card" style="margin-top:14px"><div class="hd"><h2>Recent activity</h2><a class="lnk" data-go="activity">See all</a></div><div class="tbl" id="recent"></div></div>
 </section>
 
 <section id="setup" hidden>
+  <div class="card wiz" id="wiz"></div>
+  <details class="card more" style="margin-top:14px"><summary>Details: all checks, API key, other machines</summary>
+    <div id="doctor" style="margin-top:12px"></div>
+    <div class="row"><button class="btn" id="rotate">Rotate API key</button><span class="muted">After rotating, delete and add the connection in OS3 again.</span></div>
+    <p class="muted">Other computers join OS3 with rabbit's own node installer. They don't need this router: model calls always go through the one device you picked; tasks can still run on every node.</p>
+  </details>
+</section>
+
+<section id="help" hidden>
+  <div class="card" style="max-width:760px">
+    <h2>Get help · Self fix</h2>
+    <p class="muted">Describe what goes wrong. The router adds its own diagnostics (checks, recent errors, the rabbit-agent log; never your messages or keys) and asks gpt-6-luna for the cause and a fix. This uses a little of your Codex limit. Fixes only run when you click them.</p>
+    <label class="f">What's wrong?<textarea id="hproblem" rows="4" placeholder="e.g. OS3 says “device not found” when I save the connection"></textarea></label>
+    <label class="f">Where are you?<select id="hstep">
+      <option value="setup: subscription (Codex / Claude Code)">Setup: Codex / Claude Code</option>
+      <option value="setup: OS3 node on this machine">Setup: OS3 node on this machine</option>
+      <option value="setup: adding the connection in OS3">Setup: adding the connection in OS3</option>
+      <option value="using OS3: chat">Using OS3: chat</option>
+      <option value="using OS3: tasks / workers / computer use">Using OS3: tasks, workers, computer use</option>
+      <option value="other">Something else</option></select></label>
+    <div class="row"><button class="btn primary" id="hgo">Find the problem</button><span class="muted" id="hmsg"></span></div>
+    <div id="hout"></div>
+  </div>
+  <div class="card" style="max-width:760px;margin-top:14px">
+    <h2>Common problems</h2>
+    <ul class="faq">
+      <li><b>OS3 says the device is offline or the endpoint is unreachable</b>: the device in OS3 must be the machine this router runs on, and the endpoint must end in <code>:<span class="port"></span>/v1</code> (the Ollama preset puts 11434 there).</li>
+      <li><b>“This model did not make a tool call”</b> when saving: check that the API key is the router's, then save again (OS3's test is a live call; one retry is normal).</li>
+      <li><b>You changed or reinstalled something</b>: a connection can't be edited in OS3. Delete it and add it again (Setup → “Set up again”).</li>
+      <li><b>“Usage limit reached”</b>: your ChatGPT or Claude plan's limit; the Dashboard shows when it resets.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="activity" hidden>
   <div class="card">
-    <h2>Connect OS3</h2>
-    <p class="muted">In OS3: Settings → API keys → provider <b>local</b>. Pick <b>this machine</b> as the device (the router must run on the same machine as the device).</p>
-    <div class="kv" id="vals"></div>
-    <p class="muted" id="modelnote"></p>
-    <div class="row"><button class="btn" id="rotate">Rotate API key</button><span class="muted">After rotating, delete and re-register the connection in OS3.</span></div>
-    <p id="conn" class="status" style="margin-top:14px"></p>
+    <div class="hd"><div class="seg" id="aseg"><button data-v="req" aria-pressed="true">Requests</button><button data-v="tasks">Tasks</button><button data-v="events">Events</button></div>
+      <label class="check" id="techlbl" style="margin:0" hidden><input type="checkbox" id="tech"> technical events</label></div>
+    <p class="muted" id="ahint"></p>
+    <div class="tbl" id="alist"></div>
   </div>
-  <div class="card" style="margin-top:14px"><h2>Checks</h2><div id="doctor"></div></div>
-  <div class="card" style="margin-top:14px">
-    <h2>Other machines (nodes)</h2>
-    <p class="muted">Other computers join OS3 with rabbit's own node installer (OS3 → Settings → add device). They don't need this router: model calls always go through the one device you picked above; tasks can still run on every node.</p>
-  </div>
-</section>
-
-<section id="watch" hidden>
-  <div class="grid">
-    <div class="card"><h2>Watchdog status</h2><div id="wdstat"></div></div>
-    <div class="card"><h2>rabbit-agent</h2><div id="wdagent"></div>
-      <div class="row"><button class="btn" id="restart">Restart rabbit-agent</button></div></div>
-  </div>
-  <div class="card" style="margin-top:14px"><h2>Events</h2>
-    <div class="row" style="margin:0 0 8px"><select id="evsrc" class="btn"><option value="">all</option><option value="watchdog">watchdog</option><option value="router">router</option><option value="supervisor">service</option><option value="ui">ui</option></select></div>
-    <div class="tbl" id="events"></div></div>
-</section>
-
-<section id="tasks" hidden>
-  <div class="card"><h2>Tasks</h2><p class="muted">One row per OS3 task (conversation or worker). Export downloads a zip with a report, the timeline and router fixes — secrets redacted.</p><div class="tbl" id="tasklist"></div></div>
 </section>
 
 <section id="settings" hidden>
   <div class="card" style="max-width:760px">
     <h2>Models</h2>
-    <p class="muted">Like OS3's own model picker: OS3's local mode sends one model for everything, so the router recognises who is asking and uses the model you set here. <b>Small</b> is the main chat you talk to, <b>Standard</b> runs the workers that carry out tasks (shell, files, computer use), <b>Background</b> handles memory and review calls, which run often, so a light model saves limit. <b>Effort:</b> if OS3's own reasoning sliders (Small / Standard) send an effort, that one is used for Small and Standard. Background always uses the effort set here (OS3 has no Background slider).</p>
+    <p class="muted">OS3 sends one model for everything; the router sees who is asking and uses these. <b>Small</b> = the chat you talk to · <b>Standard</b> = workers doing tasks (shell, files, computer use) · <b>Background</b> = memory and review (runs often: keep it light). <b>Effort</b>: OS3's own sliders decide it for Small and Standard; the effort here is used for Background and whenever OS3 sends none.</p>
     <label class="check"><input type="checkbox" id="routing"> Pick a model per role</label>
     <div id="rolegrid" class="rolegrid"></div>
     <div class="row"><button class="btn primary" id="saveroles">Save models</button><span class="muted" id="rolesmsg"></span></div>
@@ -169,6 +253,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
 </section>
 </main>
 <div class="toast" id="toast"></div>
+<div id="lightbox" hidden><img alt=""></div>
 
 <div id="whatsnew" role="dialog" aria-modal="true" aria-labelledby="wntitle" hidden>
   <div class="wnbox">
@@ -198,7 +283,7 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
   try { localStorage.setItem("tab", b.dataset.tab); } catch (e) {}
   refresh();
 });
-try { const t = location.hash.slice(1) || localStorage.getItem("tab"); if (t) document.querySelector(`nav button[data-tab="${t}"]`)?.click(); } catch (e) {}
+try { let t = location.hash.slice(1) || localStorage.getItem("tab"); t = {watch: "activity", tasks: "activity"}[t] || t; if (t) document.querySelector(`nav button[data-tab="${t}"]`)?.click(); } catch (e) {}
 
 function meter(pct, reset) {
   if (pct == null) return '<span class="muted">no data yet</span>';
@@ -231,74 +316,218 @@ function chart(usage) {
   $("#charttbl").innerHTML = `<table><tr><th>time</th><th class="num">requests</th><th class="num">input</th><th class="num">cached</th><th class="num">output</th></tr>${s.map(d => `<tr><td>${fmtT(d.t)}</td><td class="num">${d.n}</td><td class="num">${fmtN(d.i)}</td><td class="num">${fmtN(d.c)}</td><td class="num">${fmtN(d.o)}</td></tr>`).join("")}</table>`;
 }
 
-function agentHtml(a) {
-  if (!a || !a.status) return '<span class="status bad">✗ not found on this machine</span><p class="muted">Install the OS3 node on this machine first.</p>';
-  const good = a.status === "connected" && a.running;
-  return `<div class="status ${good ? "ok" : "bad"}">${good ? "✓ connected" : "✗ " + esc(a.status) + (a.running ? "" : " (not running)")}</div><p class="muted">pid ${esc(a.pid)} · v${esc(a.version)}<br>node ${esc((a.nodeId||"").slice(0,8))}…</p>`;
+function lim(pct, reset, label) {
+  if (pct == null) return `<div><div class="lbl">${label}</div><div class="muted">no data yet</div></div>`;
+  if (reset && reset < Date.now() / 1000) return `<div><div class="lbl">${label}</div><div class="pct" style="color:var(--ink-3)">–</div><div class="meter"><i style="width:0"></i></div><div class="muted">has reset; updates on the next request</div></div>`;
+  const cls = pct >= 90 ? "crit" : pct >= 70 ? "warn" : "";
+  return `<div><div class="lbl">${label}</div><div class="pct">${Math.round(pct)}%</div><div class="meter ${cls}"><i style="width:${Math.min(100, pct)}%"></i></div><div class="muted">${until(reset) || "&nbsp;"}</div></div>`;
 }
-
+const effortOf = (m) => (m || "").match(/-(minimal|low|medium|high|xhigh|max|ultra)$/)?.[1] || "";
+const modelOf = (m) => (m || "").replace(/-(minimal|low|medium|high|xhigh|max|ultra)$/, "");
+function whatDid(r) {
+  if (r.source === "selftest") return "Setup test" + (r.status === "ok" ? "" : " (failed)");
+  if (r.status === "running") return "Working…";
+  if (r.status === "gone") return "Cancelled by OS3";
+  if (r.status === "limit") return "Usage limit reached";
+  if (r.status === "error") return "Failed" + (r.error ? ": " + esc(r.error).slice(0, 90) : "");
+  if (r.result === "tool_call") {
+    const n = {}; (r.calls ? JSON.parse(r.calls) : []).forEach(c => n[c] = (n[c] || 0) + 1);
+    return "Used " + Object.entries(n).map(([c, k]) => `<code>${esc(c)}</code>${k > 1 ? " ×" + k : ""}`).join(", ");
+  }
+  return r.role === "background" ? "Background work (memory / review)" : "Answered";
+}
+function reqRows(rs) {
+  return `<table><tr><th>when</th><th>role</th><th>model</th><th>what</th><th class="num">time</th><th class="num">input</th><th></th></tr>${rs.map(r => {
+    const dot = r.status === "ok" ? "" : r.status === "running" ? "run" : r.status === "gone" ? "warn" : "bad";
+    return `<tr title="${esc(fmtT(r.ts))}"><td>${ago(r.ts)}</td><td><span class="pill2 ${esc(r.role || "")}">${esc(ROLE_LABEL[r.role] || r.role || "?")}</span></td><td>${esc(modelOf(r.model))} <span class="muted">${esc(effortOf(r.model))}</span></td><td class="what">${whatDid(r)}</td><td class="num">${r.done_ts ? Math.round(r.done_ts - r.ts) + "s" : "…"}</td><td class="num">${fmtN(r.in_tok)}</td><td><span class="dot ${dot}"></span></td></tr>`; }).join("")}</table>`;
+}
 async function dash(st) {
+  banner(st);
   const all = Object.entries(st.limits_all || (st.limits ? {codex: st.limits} : {}));
-  const per = (pk, rk) => all.length ? all.map(([b, L]) => (all.length > 1 ? `<div class="muted" style="margin-top:8px">${b === "claude" ? "Claude" : "Codex"}</div>` : "") + meter(L[pk], L[rk])).join("") : meter(null);
-  $("#lim5").innerHTML = per("p_pct", "p_reset");
-  $("#limw").innerHTML = per("s_pct", "s_reset");
-  $("#agent").innerHTML = agentHtml(st.agent);
+  $("#subs").innerHTML = (all.length ? all : [["codex", {}]]).map(([b, L]) => `<div class="card"><h2>${b === "claude" ? "Claude subscription" : "ChatGPT subscription (Codex)"}</h2><div class="lim2">${lim(L.p_pct, L.p_reset, "5-hour window")}${lim(L.s_pct, L.s_reset, "this week")}</div></div>`).join("");
+  const [c, ms] = await Promise.all([api("config"), MODELS.length ? MODELS : api("models")]);
+  MODELS = ms;
+  const nm = (slug) => (ms.find(m => m.slug === slug) || {name: slug}).name, R = c.roles || {};
+  $("#dmodels").innerHTML = c.role_routing !== false ? ["chat", "worker", "background"].map(r => `<div class="mrow"><span class="r">${ROLE_LABEL[r]}</span><b>${esc(nm((R[r] || {}).model || c.model))}</b><span class="e">${r === "background" ? "effort " + esc((R[r] || {}).effort || c.effort) : "effort from OS3's slider"} · ${ROLE_HINT[r]}</span></div>`).join("")
+    : `<div class="mrow"><span class="r">All roles</span><b>${esc(nm(c.model))}</b></div>`;
   const u = await api("usage?hours=" + $("#range").value);
   const T = u.total;
   $("#tokh").textContent = "Tokens · " + $("#range").selectedOptions[0].text;
-  const rolesTbl = (u.by_role || []).filter(r => r.role !== "?").map(r => `<tr><td>${esc(ROLE_LABEL[r.role] || r.role)}</td><td class="num">${fmtN(r.i)}</td><td class="num">${r.n}</td></tr>`).join("");
-  $("#tok").innerHTML = `<div class="big">${fmtN(T.i)}</div><p class="muted">input (${T.i ? Math.round(100*T.c/T.i) : 0}% cached) · output ${fmtN(T.o)} · ${T.n} requests</p>` +
-    (rolesTbl ? `<table class="roles-tbl"><tr><th>role</th><th class="num">input</th><th class="num">calls</th></tr>${rolesTbl}</table>` : "");
+  const rolesTbl = (u.by_role || []).filter(r => r.role !== "?").map(r => `<div class="mrow"><span class="r">${esc(ROLE_LABEL[r.role] || r.role)}</span><span>${fmtN(r.i)} <span class="muted">· ${r.n} calls</span></span></div>`).join("");
+  $("#tok").innerHTML = `<div class="big">${fmtN(T.i)}</div><p class="muted" style="margin:2px 0 8px">input · ${T.i ? Math.round(100 * T.c / T.i) : 0}% cached · output ${fmtN(T.o)}</p>${rolesTbl}`;
   chart(u);
-  const rs = await api("requests?limit=40");
-  $("#reqs").innerHTML = `<table><tr><th>time</th><th>role · model</th><th>result</th><th class="num">duration</th><th class="num">input</th><th class="num">output</th><th>status</th></tr>${rs.map(r => {
-    const calls = r.calls ? JSON.parse(r.calls).join(", ") : ""; const dur = r.done_ts ? (r.done_ts - r.ts).toFixed(0) + "s" : "…";
-    const cls = r.status === "ok" ? "ok" : r.status === "running" ? "" : "bad";
-    return `<tr><td>${fmtT(r.ts)}</td><td>${esc(ROLE_LABEL[r.role] || r.role || "")} · ${esc((r.model || "").replace(/-(low|medium|high|xhigh|max|ultra)$/, " $1"))}<br><span class="muted">${esc(r.mode || "")}</span></td><td>${esc(r.result || "")} ${esc(calls).slice(0,80)}</td><td class="num">${dur}</td><td class="num">${fmtN(r.in_tok)}</td><td class="num">${fmtN(r.out_tok)}</td><td class="${cls}">${esc(r.status)}${r.error ? " · " + esc(r.error).slice(0,80) : ""}</td></tr>`; }).join("")}</table>`;
+  $("#recent").innerHTML = reqRows(await api("requests?limit=8"));
 }
 
+const chip = (v) => `<button class="chip" data-copy="${esc(v)}"><code>${esc(v)}</code><span>Copy</span></button>`;
+const shot = (n, cap) => `<figure><img src="/guide/${n}.jpg" alt="${esc(cap || "")}" loading="lazy">${cap ? `<figcaption>${cap}</figcaption>` : ""}</figure>`;
+let HASOLD = null, WZ = null, OB = null;
+function screens(o) {
+  const endpoint = `http://localhost:${o.port}/v1`;
+  const machine = o.steps.filter(x => x.id === "engine" || x.id === "node");
+  const S = [
+    {id: "welcome", title: "Connect OS3 to your router", body: `<div class="hero">👋</div><p class="lead">This takes about two minutes. You'll add one connection in OS3 (the app or website), and this page checks each step for you.</p><p class="lead">Keep OS3 open next to this page.</p>`, next: "Start"},
+    {id: "machine", title: "Check this machine", body: `<p class="lead">The router needs your AI subscription and the OS3 node on this computer.</p><ol class="obsteps">${machine.map(x => `<li data-s="${x.state}"><span class="ic">${x.state === "ok" ? "✓" : "!"}</span><div><b>${esc(x.title)}</b><div class="d">${esc(x.detail)}</div></div>${x.action ? `<button class="btn primary" data-fix="${x.action}">Fix</button>` : "<span></span>"}</li>`).join("")}</ol>`,
+     ok: machine.every(x => x.state === "ok"), wait: "Fix the red items first (or click Get help).", test: true},
+    {id: "old", title: "Do you already have a connection?", body: `<p class="lead">Check OS3 → Settings → <b>api keys</b>. Is there already a <b>Local model</b> connection?</p><div class="choice"><button class="btn" data-old="0"><b>No, this is new</b><small>Nothing set up yet</small></button><button class="btn" data-old="1"><b>Yes, I have one</b><small>From an earlier try or another router</small></button></div>`, choose: true},
+  ];
+  if (HASOLD) S.push({id: "delete", title: "Delete the old connection", body: `<p class="lead">In OS3: Settings → <b>api keys</b> → open your <b>Local model</b> connection → scroll down → <b>delete connection</b>. A connection can't be edited, only replaced.</p>${big([["0-delete"]])}`});
+  S.push(
+    {id: "s1", title: "Open API keys", body: `<p class="lead">In OS3, open <b>Settings</b> and click <b>api keys</b>. Then add a new connection.</p>${big([["1-api-keys"]])}`},
+    {id: "s2", title: "Choose “Local model”", body: `<p class="lead">Under <b>provider</b>, choose <b>Local model</b>. It's near the bottom of the list.</p>${big([["2-provider"]])}`},
+    {id: "s3", title: "Choose this machine", body: `<p class="lead">Under <b>device</b>, choose <b>${esc(o.host)}</b>: the computer this router runs on. Not another device.</p>${big([["3-device"]])}`},
+    {id: "s4", title: "Endpoint", body: `<p class="lead">OS3 fills in port <b>11434</b> (that's for Ollama). Delete it and paste:</p><p>${chip(endpoint)}</p>${o.port != 11435 ? `<div class="alert bad">Your router uses port <b>${o.port}</b>, not the 11435 in the screenshot. Paste the address above.</div>` : ""}${big([["4-endpoint-wrong", "✗ what OS3 fills in (11434)"], ["4-endpoint", "✓ the router (11435)"]])}`},
+    {id: "s5", title: "Model id", body: `<p class="lead">Type:</p><p>${chip(o.model)}</p><p class="lead">It's only a label. The router picks the real model for each role (you can change them later in Settings → Models).</p>${big([["5-model"]])}`},
+    {id: "s6", title: "API key", body: `<p class="lead">Paste the router's key:</p><p>${chip(o.key)}</p>${big([["6-key"]])}`},
+    {id: "s7", title: "Save", body: `<p class="lead">Press <b>save connection</b>. OS3 now tests the connection; it can take up to a minute. It should then show <b>registered · Local model</b> and <b>last used · ok</b>.</p>${big([["7-saved"]])}`, next: "I saved it"},
+    {id: "wait", title: "", body: "", live: true},
+  );
+  return S;
+}
+const big = (imgs) => `<div class="big">${imgs.map(([n, c]) => `<figure><img src="/guide/${n}.jpg" alt="${esc(c || "")}">${c ? `<figcaption>${c}</figcaption>` : ""}</figure>`).join("")}</div>`;
+function waitScreen(o) {
+  const c = o.steps.find(x => x.id === "connection");
+  if (c.state === "ok") return {title: "You're connected! 🎉", body: `<p class="lead">${esc(c.detail)}. Say “hi” to OS3 to try it.</p><p class="lead">Next: pick which models to use for the chat and for tasks in <b>Settings → Models</b>. OS3's effort sliders work too.</p>`, done: true};
+  if (c.state === "error") return {title: "Almost: OS3 uses a different key", body: `<div class="alert bad">${esc(c.detail)}</div><p class="lead">Delete the connection in OS3 and add it again with the new key.</p><button class="btn primary" data-goto="delete">Show me how</button>`};
+  return {title: "Waiting for OS3…", body: `<p class="lead">As soon as OS3 contacts the router, this page continues by itself.</p><p class="muted">Nothing after a minute? Check the device (step “Choose this machine”) and the endpoint port, or click Get help.</p>`};
+}
+let TEST = null;
+const testBox = () => `<div style="margin-top:14px"><div class="row" style="margin:0"><button class="btn" id="runtest" ${TEST === "run" ? "disabled" : ""}>${TEST === "run" ? "Testing… (up to a minute)" : "Test my setup"}</button><span class="muted">Sends OS3's own connection test and a worker tool call through the router (uses a few thousand tokens).</span></div>`
+  + (TEST && TEST !== "run" ? `<ol class="obsteps" style="margin-top:10px">${TEST.results.map(r => `<li data-s="${r.ok ? "ok" : "error"}"><span class="ic">${r.ok ? "✓" : "!"}</span><div><b>${esc(r.test)}</b><div class="d">${esc(r.detail)} <span class="muted">· ${esc(modelOf(r.model))} · ${r.secs}s</span></div></div><span></span></li>`).join("")}</ol>`
+    + (TEST.ok ? `<p class="ok" style="font-size:13px">✓ The router works. OS3 will be able to use it.</p>` : `<p style="font-size:13px"><a class="lnk" data-help>Get help with this</a></p>`) : "") + `</div>`;
+const shareBox = () => `<div class="alert good" style="margin-top:18px"><b>One question: share problem reports with the developer?</b><br>If something goes wrong or gets fixed, the router sends a short report (version, OS, what happened). Anonymous: no messages, no names, no keys. You can change this in Settings.<div class="row" style="margin:10px 0 0"><button class="btn primary" data-share="1">Yes, share reports</button><button class="btn" data-share="0">No thanks</button></div></div>`;
+document.addEventListener("click", async (e) => {
+  if (e.target.id === "runtest") { TEST = "run"; setup(); try { TEST = await post("selftest"); } catch (err) { TEST = {ok: false, results: [{test: "Test", ok: false, detail: err.message, model: "", secs: 0}]}; } setup(); }
+  const sh = e.target.closest("[data-share]");
+  if (sh) { await post("config", {share_reports: sh.dataset.share === "1"}); toast(sh.dataset.share === "1" ? "Thanks! Reports are on." : "OK, no reports."); setup(); }
+});
 async function setup(st) {
-  const c = await api("config");
-  const vals = [["endpoint", `http://localhost:${c.port}/v1`], [c.role_routing !== false ? "model id (label)" : "model id", c.model], ["api key", c.api_key], ["context window", "200000"]];
-  $("#vals").innerHTML = vals.map(([k, v]) => `<span>${k}</span><code>${esc(v)}</code><button class="btn" data-copy="${esc(v)}">Copy</button>`).join("");
-  $("#vals").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy(b.dataset.copy));
-  const ms = await api("models"), nm = (slug) => (ms.find(m => m.slug === slug) || {name: slug}).name;
-  const R = c.roles || {};
-  $("#modelnote").innerHTML = c.role_routing !== false
-    ? `<b>Models actually used</b> (the model id above is only a label; keep it as is):<br>` +
-      ["chat", "worker", "background"].map(r => `${ROLE_LABEL[r]}: <b>${esc(nm((R[r] || {}).model || c.model))}</b>`).join(" · ") +
-      `<br>Effort comes from OS3's reasoning sliders; Background uses ${esc((R.background || {}).effort || c.effort)}. ` +
-      `<a href="#settings" onclick="document.querySelector('nav button[data-tab=settings]').click();return false">Change models</a>`
-    : `“Pick a model per role” is off, so the model id above (<b>${esc(c.model)}</b>) is used for everything.`;
+  const o = OB = await api("onboarding");
+  document.querySelectorAll(".port").forEach(e => e.textContent = o.port);
+  if (o.problem === "wrong_key") HASOLD = true;
+  const S = screens(o);
+  if (WZ === null) WZ = o.done ? "summary" : 0;
+  let body, title, nav = "";
+  if (WZ === "summary") {
+    title = "All set ✓";
+    body = `<ol class="obsteps">${o.steps.map(x => `<li data-s="${x.state}"><span class="ic">${x.state === "ok" ? "✓" : "!"}</span><div><b>${esc(x.title)}</b><div class="d">${esc(x.detail)}</div></div>${x.action ? `<button class="btn primary" data-fix="${x.action}">Fix</button>` : "<span></span>"}</li>`).join("")}</ol>`;
+    body += testBox();
+    nav = `<span class="sp"></span><button class="btn" data-goto="0">Set up again</button>`;
+    $("#wiz").innerHTML = `<h2 class="wt">${title}</h2>${body}<div class="nav">${nav}</div>`;
+  } else {
+    WZ = Math.min(WZ, S.length - 1);
+    const sc = S[WZ].live ? Object.assign({}, S[WZ], waitScreen(o)) : S[WZ];
+    const pct = Math.round(100 * WZ / (S.length - 1));
+    const back = WZ > 0 ? `<button class="btn" data-goto="${WZ - 1}">Back</button>` : "";
+    const next = sc.choose ? "" : sc.done ? `<button class="btn primary" data-goto="dash">Go to the dashboard</button>`
+      : sc.live ? "" : `<button class="btn primary" data-goto="${WZ + 1}" ${sc.ok === false ? "disabled" : ""}>${sc.next || "Next"}</button>`;
+    $("#wiz").innerHTML = `<div class="bar"><i style="width:${pct}%"></i></div><div class="stepno">Step ${WZ + 1} of ${S.length}</div>
+      <h2 class="wt">${sc.title}</h2>${sc.body}${sc.ok === false ? `<p class="muted">${sc.wait}</p>` : ""}${sc.test && sc.ok !== false ? testBox() : ""}${sc.done && o.share_reports == null ? shareBox() : ""}
+      <div class="nav">${back}<a data-help>Having trouble? Get help</a><span class="sp"></span>${next}</div>`;
+  }
   const d = await api("doctor");
   $("#doctor").innerHTML = d.map(x => `<div class="check"><span class="${x.ok ? "ok" : "bad"}">${x.ok ? "✓" : "✗"}</span><span>${esc(x.check)} <span class="muted">— ${esc(x.detail)}</span></span></div>`).join("");
-  const called = d.find(x => x.check.startsWith("OS3 has called"));
-  $("#conn").innerHTML = called?.ok ? '<span class="ok">✓ OS3 is connected and using this router</span>' : '<span class="wn">⏳ waiting for OS3… save the connection in OS3, then send it a message</span>';
+}
+document.addEventListener("click", (e) => {
+  const g = e.target.closest("[data-goto]"), old = e.target.closest("[data-old]");
+  if (old) { HASOLD = old.dataset.old === "1"; WZ = screens(OB).findIndex(x => x.id === "old") + 1; setup(); return; }
+  if (!g) return;
+  const t = g.dataset.goto;
+  if (t === "dash") { WZ = "summary"; document.querySelector('nav button[data-tab="dash"]').click(); return; }
+  if (t === "delete") { HASOLD = true; WZ = screens(OB).findIndex(x => x.id === "delete"); }
+  else WZ = Number(t);
+  setup(); window.scrollTo(0, 0);
+});
+
+// fix buttons, copy chips, screenshots and "get help" buttons work anywhere on the page
+document.addEventListener("click", async (e) => {
+  const fix = e.target.closest("[data-fix]"), cp = e.target.closest("[data-copy]"), img = e.target.closest(".shots img, .big img"), help = e.target.closest("[data-help]");
+  if (cp) { copy(cp.dataset.copy); return; }
+  if (img) { $("#lightbox img").src = img.src; $("#lightbox").hidden = false; return; }
+  if (help) { document.querySelector('nav button[data-tab="help"]').click(); $("#hproblem").focus(); return; }
+  if (fix) {
+    fix.disabled = true; const t = fix.textContent; fix.textContent = "Fixing…";
+    try { const r = await post("selffix/action", {id: fix.dataset.fix, args_json: fix.dataset.args || "{}"}); toast((r.ok ? "✓ " : "✗ ") + r.message); }
+    catch (err) { toast("✗ " + err.message); }
+    fix.disabled = false; fix.textContent = t; refresh();
+  }
+});
+$("#lightbox").onclick = () => $("#lightbox").hidden = true;
+
+$("#hgo").onclick = async () => {
+  const problem = $("#hproblem").value.trim();
+  if (!problem) { $("#hproblem").focus(); return; }
+  $("#hgo").disabled = true; $("#hmsg").textContent = "Looking at your setup… (up to a minute)"; $("#hout").innerHTML = "";
+  try {
+    const r = await post("selffix", {problem, step: $("#hstep").value});
+    if (r.error) { $("#hout").innerHTML = `<div class="alert bad">${esc(r.error)}</div>`; }
+    else {
+      $("#hout").innerHTML = `<div class="alert good" style="margin-top:14px"><b>${esc(r.summary)}</b></div>`
+        + (r.cause ? `<p class="muted">Why: ${esc(r.cause)}</p>` : "")
+        + (r.steps?.length ? `<h3 style="font-size:14px;margin:14px 0 6px">What to do</h3><ol>${r.steps.map(x => `<li style="margin:4px 0">${esc(x)}</li>`).join("")}</ol>` : "")
+        + (r.actions?.length ? `<h3 style="font-size:14px;margin:14px 0 6px">Fixes the router can do</h3>${r.actions.map(a => `<div class="row" style="margin:6px 0"><button class="btn primary" data-fix="${esc(a.id)}" data-args="${esc(a.args_json)}">${esc(a.label)}</button><span class="muted">${esc(a.why)}</span></div>`).join("")}` : "")
+        + `<p class="muted" style="margin-top:14px">Answered by ${esc(r.model)}. Still stuck? Send a log export (Tasks &amp; export) to whoever helps you.</p>`;
+    }
+  } catch (err) { $("#hout").innerHTML = `<div class="alert bad">${esc(err.message)}</div>`; }
+  $("#hgo").disabled = false; $("#hmsg").textContent = "";
+};
+
+async function banner(st) {
+  const o = await api("onboarding"), b = $("#banner");
+  const f = (st.watchdog?.findings || []).filter(x => x.level === "error");
+  const cur = o.steps.find(x => x.id === o.current);
+  const last = o.steps.find(x => x.id === "connection");
+  if (!o.done) b.innerHTML = `<div class="t"><b>Setup isn't finished:</b> ${esc(cur.title)}. <span class="muted">${esc(cur.detail)}</span></div><button class="btn primary" onclick="document.querySelector('nav button[data-tab=setup]').click()">Continue setup</button>`;
+  else if (f.length) b.innerHTML = `<div class="t"><b>⚠ ${esc(f[0].msg)}</b></div><button class="btn" data-help>Get help</button>`;
+  else b.innerHTML = `<div class="t"><span class="ok">✓</span> <b>Everything works.</b> <span class="muted">${esc(last.detail)}</span></div>`;
+  if ((st.fallback_active || []).length) b.innerHTML += `<div class="t" style="flex-basis:100%"><b>↪ Fallback active:</b> <span class="muted">${st.fallback_active.map(x => x === "claude" ? "Claude" : "Codex").join(" and ")} hit the usage limit, so the fallback model is used for now.</span></div>`;
+  const a = st.agent || {};
+  b.innerHTML += `<span class="ag">rabbit-agent ${a.status === "connected" ? "connected" : esc(a.status || "not found")}${a.version ? " · v" + esc(a.version) : ""} · <a class="lnk" id="restart">Restart</a></span>`;
+  b.hidden = false;
 }
 
-async function watch(st) {
-  const w = st.watchdog || {};
-  const f = w.findings || [];
-  $("#wdstat").innerHTML = `<div class="status ${f.length ? "wn" : "ok"}">${f.length ? "⚠ " + f.map(x => esc(x.kind)).join(", ") : "✓ all healthy"}</div><p class="muted">last check ${ago(w.ts)}${w.advice ? "<br>Jev: " + esc(w.advice.diagnosis) + " (" + Math.round(100*(w.advice.confidence||0)) + "%)" : ""}</p>`;
-  $("#wdagent").innerHTML = agentHtml(st.agent);
-  const ev = await api("events?limit=150&source=" + $("#evsrc").value);
-  $("#events").innerHTML = `<table><tr><th>time</th><th>source</th><th>event</th><th>details</th></tr>${ev.map(e => `<tr><td>${fmtT(e.ts)}</td><td>${esc(e.source)}</td><td class="lvl-${esc(e.level)}">${esc(e.kind)}</td><td>${esc(e.msg).slice(0,240)}</td></tr>`).join("")}</table>`;
-}
-
-async function tasks() {
-  const t = await api("tasks?limit=60");
-  $("#tasklist").innerHTML = `<table><tr><th>last activity</th><th>kind</th><th class="num">requests</th><th class="num">input</th><th class="num">errors</th><th></th></tr>${t.map(x => `<tr><td>${fmtT(x.last)}</td><td>${x.tools ? "agent task" : "chat"}</td><td class="num">${x.requests}</td><td class="num">${fmtN(x.in_tok)}</td><td class="num ${x.errors ? "bad" : ""}">${x.errors}</td><td><a class="btn" href="/api/export?task=${esc(x.task)}&name=codex-os3-${esc(x.task)}">Export</a></td></tr>`).join("")}</table>`;
+const EV = {
+  invalid_calls: "The model made a broken tool call", fix_result: "Repaired a tool call", call_fixed: "Corrected a tool call",
+  feed_added: "Added a missing screenshot step", verify: "Double-checked the answer", false_unavailable: "The model wrongly said a tool was unavailable",
+  forced_tool: "OS3 required a tool; asked again", retry: "The model hung; retried", client_gone: "OS3 cancelled a request",
+  usage_limit: "Usage limit reached", error: "Error", tunnel_dead: "rabbit-agent connection stuck", restart_agent: "Restarted the rabbit-agent",
+  agent_down: "rabbit-agent not running", stalled: "OS3 has been quiet after a tool call", weekly_limit_high: "Weekly limit almost used",
+  codex_unstable: "Model calls are unstable", update: "Update", update_failed: "Update failed", codex_update: "Codex CLI update",
+  selffix: "Self fix", selffix_action: "Self fix action", loop_nudge: "Nudged a screenshot loop", watchdog_error: "Watchdog error",
+  limit_high: "Limit almost used (90%+)", fallback: "Switched to the fallback model", selftest: "Setup test",
+  keepalive_error: "Keep-alive error",
+  fix_failed: "Couldn't repair a tool call", verify_failed: "Double-check failed", false_unavailable_failed: "Retry failed",
+};
+let AV = "req";
+async function activity(st) {
+  document.addEventListener("click", (e) => { if (e.target.id === "restart") restartAgent(); });
+document.querySelectorAll("#aseg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === AV));
+  $("#techlbl").hidden = AV !== "events";
+  if (AV === "req") {
+    $("#ahint").textContent = "Every model call OS3 made through the router, newest first.";
+    $("#alist").innerHTML = reqRows(await api("requests?limit=80"));
+  } else if (AV === "tasks") {
+    $("#ahint").textContent = "One row per OS3 conversation or worker task. Export gives a zip (report + timeline, secrets removed) to share when asking for help.";
+    const t = await api("tasks?limit=60");
+    $("#alist").innerHTML = `<table><tr><th>last activity</th><th>kind</th><th class="num">calls</th><th class="num">input</th><th class="num">errors</th><th></th></tr>${t.map(x => `<tr><td>${ago(x.last)}</td><td>${x.tools ? "Task / worker" : "Chat"}</td><td class="num">${x.requests}</td><td class="num">${fmtN(x.in_tok)}</td><td class="num ${x.errors ? "bad" : ""}">${x.errors || "–"}</td><td><a class="lnk" href="/api/export?task=${esc(x.task)}&name=os3-router-${esc(x.task)}">Export</a></td></tr>`).join("")}</table>`;
+  } else {
+    $("#ahint").textContent = "What the router and its watchdog noticed or fixed.";
+    const tech = $("#tech").checked;
+    const ev = (await api("events?limit=200")).filter(e => tech || EV[e.kind]);
+    $("#alist").innerHTML = ev.length ? `<table><tr><th>when</th><th></th><th>what</th><th>details</th></tr>${ev.map(e => `<tr title="${esc(fmtT(e.ts))}"><td>${ago(e.ts)}</td><td><span class="dot ${e.level === "error" ? "bad" : e.level === "warn" ? "warn" : "info"}"></span></td><td>${esc(EV[e.kind] || e.kind)}</td><td class="muted">${esc(e.msg).slice(0, 200)}</td></tr>`).join("")}</table>` : `<p class="muted">Nothing to report.</p>`;
+  }
 }
 
 const FIELDS = [
-  ["watchdog", "Watchdog", "bool", null, "Detects a dead rabbit-agent tunnel, limits and stuck tasks."],
-  ["auto_update", "Automatic updates", "bool", null, "Checks GitHub every 30 min; a new release is installed only if its tests pass on this machine, without interrupting OS3."],
+  ["auto_update", "Automatic updates", "bool", null, "Checks GitHub every 30 min; a new release is installed only if its tests pass on this machine, without interrupting OS3.", "Updates"],
+  ["watchdog", "Watchdog", "bool", null, "Detects a dead rabbit-agent tunnel, limits and stuck tasks.", "Watchdog"],
   ["restart_agent", "Let the watchdog restart a stuck rabbit-agent", "bool"],
   ["jev_key", "TypeSafe Jev key (optional)", "password", null, "Gives the watchdog a second opinion on ambiguous situations."],
   ["webhook", "Alert webhook (optional)", "text", null, "e.g. https://ntfy.sh/your-topic — receives watchdog alerts."],
-  ["captures", "Store full requests for debugging", "bool", null, "Off by default: captures contain screenshots and anything you typed."],
+  ["captures", "Store full requests for debugging", "bool", null, "Off by default: captures contain screenshots and anything you typed.", "Privacy & history"],
   ["retention_days", "Keep history (days)", "number"],
-  ["bind", "Listen on", "select", ["127.0.0.1","0.0.0.0"], "0.0.0.0 exposes the router on your network (API key still required). Needs a service restart."],
+  ["share_reports", "Share problem reports with the developer", "bool", null, "Anonymous: version, OS and what went wrong or got fixed. No messages, names or keys.", "Help improve os3-router"],
+  ["bind", "Listen on", "select", ["127.0.0.1","0.0.0.0"], "0.0.0.0 exposes the router on your network (API key still required). Needs a service restart.", "Network"],
 ];
 let MODELS = [];
 async function settings() {
@@ -306,11 +535,13 @@ async function settings() {
   MODELS = await api("models");
   $("#routing").checked = c.role_routing !== false;
   const group = (b, label) => { const ms = MODELS.filter(m => (m.backend || "codex") === b); return ms.length ? `<optgroup label="${label}">${ms.map(m => `<option value="${esc(m.slug)}">${esc(m.name)}</option>`).join("")}</optgroup>` : ""; };
-  const opt = (sel) => (group("codex", "Codex (ChatGPT subscription)") + group("claude", "Claude (Claude Code login)")).replace(`value="${esc(sel)}"`, `value="${esc(sel)}" selected`)
-    + (MODELS.some(m => m.slug === sel) ? "" : `<option value="${esc(sel)}" selected>${esc(sel)} (not available here)</option>`);
+  const groups = (sel) => (group("codex", "Codex (ChatGPT subscription)") + group("claude", "Claude (Claude Code login)")).replace(`value="${esc(sel)}"`, `value="${esc(sel)}" selected`);
+  const opt = (sel) => groups(sel) + (MODELS.some(m => m.slug === sel) ? "" : `<option value="${esc(sel)}" selected>${esc(sel)} (not available here)</option>`);
   $("#rolegrid").innerHTML = ["chat", "worker", "background"].map(r => {
     const cur = (c.roles || {})[r] || {model: c.model, effort: c.effort};
-    return `<span class="rl">${ROLE_LABEL[r]}<br><span class="muted" style="font-weight:400">${ROLE_HINT[r]}</span></span><select data-role="${r}" data-k="model">${opt(cur.model)}</select><select data-role="${r}" data-k="effort" data-cur="${esc(cur.effort)}"></select><span class="muted desc" data-desc="${r}"></span>`;
+    const fb = ((c.fallback || {})[r] || {}).model || "";
+    return `<span class="rl">${ROLE_LABEL[r]}<br><span class="muted" style="font-weight:400">${ROLE_HINT[r]}</span></span><select data-role="${r}" data-k="model">${opt(cur.model)}</select><select data-role="${r}" data-k="effort" data-cur="${esc(cur.effort)}"></select><span class="muted desc" data-desc="${r}"></span>`
+      + `<span class="fbl">at the limit →</span><select data-role="${r}" data-k="fb"><option value="">no fallback: wait for the reset</option>${fb ? opt(fb) : groups("")}</select><span></span>`;
   }).join("");
   const sync = (r) => {
     const m = MODELS.find(x => x.slug === $(`select[data-role="${r}"][data-k="model"]`).value) || {efforts: ["low","medium","high"], default_effort: "medium", description: ""};
@@ -319,25 +550,28 @@ async function settings() {
     $(`[data-desc="${r}"]`).textContent = m.description;
   };
   ["chat", "worker", "background"].forEach(r => { sync(r); $(`select[data-role="${r}"][data-k="model"]`).onchange = () => sync(r); });
-  $("#cfg").innerHTML = FIELDS.map(([k, label, type, opts, help]) => {
+  $("#cfg").innerHTML = FIELDS.map(([k, label, type, opts, help, grp]) => (grp ? `<div class="cfggroup">${grp}</div>` : "") + (() => {
     const h = help ? `<span class="muted">${help}</span>` : "";
-    if (type === "bool") return `<label class="check"><input type="checkbox" name="${k}" ${c[k] ? "checked" : ""}> ${label}</label>${help ? `<p class="muted" style="margin:-6px 0 12px 26px">${help}</p>` : ""}`;
+    if (type === "bool") return `<label class="check"><input type="checkbox" name="${k}" ${c[k] ? "checked" : ""} ${c[k] == null ? "data-unasked=1" : ""}> ${label}</label>${help ? `<p class="muted" style="margin:-6px 0 12px 26px">${help}</p>` : ""}`;
     if (type === "select") return `<label class="f">${label}<select name="${k}">${opts.map(o => `<option ${o === c[k] ? "selected" : ""}>${o}</option>`).join("")}</select>${h}</label>`;
     if (type === "password") return `<label class="f">${label}<input type="password" name="${k}" placeholder="${c[k] ? "•••••• (set — leave empty to keep)" : "not set"}">${h}</label>`;
     return `<label class="f">${label}<input type="${type}" name="${k}" value="${esc(c[k])}">${h}</label>`;
-  }).join("");
+  })()).join("");
 }
 $("#saveroles").onclick = async () => {
   const roles = {};
   ["chat", "worker", "background"].forEach(r => roles[r] = {
     model: $(`select[data-role="${r}"][data-k="model"]`).value, effort: $(`select[data-role="${r}"][data-k="effort"]`).value});
-  await post("config", {roles, role_routing: $("#routing").checked});
+  const fallback = {};
+  ["chat", "worker", "background"].forEach(r => fallback[r] = {model: $(`select[data-role="${r}"][data-k="fb"]`).value, effort: roles[r].effort});
+  await post("config", {roles, fallback, role_routing: $("#routing").checked});
   $("#rolesmsg").textContent = "Saved. Used from the next request on.";
   toast("Models saved");
 };
 $("#save").onclick = async () => {
   const out = {};
   FIELDS.forEach(([k, , type]) => { const el = $("#cfg").elements[k]; if (!el) return;
+    if (k === "share_reports" && el.dataset.unasked && !el.checked) return;  // don't turn "not asked yet" into "no"
     if (type === "bool") out[k] = el.checked; else if (type === "number") out[k] = Number(el.value);
     else if (type === "password") { if (el.value) out[k] = el.value; } else out[k] = el.value; });
   const r = await post("config", out);
@@ -345,9 +579,11 @@ $("#save").onclick = async () => {
   toast("Settings saved");
 };
 $("#rotate").onclick = async () => { if (!confirm("Rotate the API key? OS3 stops working until you re-register the connection with the new key.")) return; await post("key/rotate"); toast("New key created"); refresh(); };
-$("#restart").onclick = async () => { $("#restart").disabled = true; toast("Restarting rabbit-agent…"); try { const r = await post("agent/restart"); toast(r.message); } finally { $("#restart").disabled = false; refresh(); } };
+const restartAgent = async () => { if (!confirm("Restart the rabbit-agent (OS3 node) on this machine?")) return; toast("Restarting rabbit-agent…"); try { const r = await post("agent/restart"); toast(r.message); } finally { refresh(); } };
+document.querySelectorAll("#aseg button").forEach(b => b.onclick = () => { AV = b.dataset.v; refresh(); });
+$("#tech").onchange = () => refresh();
+document.addEventListener("click", (e) => { const g = e.target.closest("[data-go]"); if (g) document.querySelector(`nav button[data-tab="${g.dataset.go}"]`).click(); });
 $("#range").onchange = () => refresh();
-$("#evsrc").onchange = () => refresh();
 
 async function refresh() {
   try {
@@ -359,8 +595,7 @@ async function refresh() {
     const tab = document.querySelector('nav button[aria-selected="true"]').dataset.tab;
     if (tab === "dash") await dash(st);
     if (tab === "setup") await setup(st);
-    if (tab === "watch") await watch(st);
-    if (tab === "tasks") await tasks();
+    if (tab === "activity") await activity(st);
     if (tab === "settings") await settings();
   } catch (e) { $("#health").textContent = "✗ " + e.message; }
 }
@@ -388,6 +623,8 @@ async function whatsNew() {
 }
 $("#wncontinue").onclick = async () => { $("#whatsnew").hidden = true; try { await post("whatsnew/seen"); } catch (e) {} };
 whatsNew();
+// not set up yet: start in the wizard
+api("onboarding").then(o => { if (!o.done && !location.hash) document.querySelector('nav button[data-tab="setup"]').click(); }).catch(() => {});
 </script>
 </body>
 </html>

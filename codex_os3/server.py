@@ -1,5 +1,5 @@
 """HTTP worker: the OpenAI-compatible API for OS3 plus the local web UI and its JSON API."""
-import hmac, json, os, select, signal, socket, threading, time, urllib.parse, uuid
+import hmac, json, os, re, select, signal, socket, threading, time, urllib.parse, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import __version__, config, engine, store, ui_api
@@ -111,6 +111,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, f.read(), "text/html; charset=utf-8")
         if path.startswith("/api/"):
             return self.api("GET", path, cfg)
+        m = re.fullmatch(r"/guide/([0-9a-z-]+\.jpg)", path)  # setup screenshots
+        if m and os.path.isfile(os.path.join(UI_DIR, "guide", m.group(1))):
+            with open(os.path.join(UI_DIR, "guide", m.group(1)), "rb") as f:
+                return self.send(200, f.read(), "image/jpeg", [("Cache-Control", "max-age=86400")])
         self.send(404, {"error": {"message": "not found"}})
 
     def do_POST(self):
@@ -143,7 +147,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def chat(self, cfg):
         if not self.api_key_ok(cfg):
-            return self.send(401, {"error": {"message": "bad api key"}})
+            # usually an old OS3 connection (key rotated, reinstalled): the setup page explains it
+            got = self.headers.get("Authorization", "").replace("Bearer ", "").strip()
+            store.kv_set("auth_fail", {"ts": time.time(), "key_end": got[-4:] if len(got) >= 8 else ("none" if not got else "?")})
+            return self.send(401, {"error": {"message": "wrong api key: copy the key from the os3-router setup page "
+                                             "into your OS3 connection (delete the old connection first)"}})
         try:
             body, _ = self.body()
         except ValueError as e:

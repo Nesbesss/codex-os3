@@ -57,6 +57,7 @@ function Plain($body) {  # changelog markdown -> plain bullets
     (($out -join "`n") -replace '\*\*', '') -replace '`', ''
 }
 $script:wnShown = $false
+$script:lastAlert = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()  # only alerts from now on
 function WhatsNew {  # after an update, once (the web UI or menu bar app may show it instead)
     $script:wnShown = $true
     try {
@@ -78,6 +79,9 @@ function Update {
         $limitItem.Text = "5h: $([math]::Round($s.limits.p_pct))%  ·  weekly: $([math]::Round($s.limits.s_pct))%"
         $icon.Text = "os3-router — $($statusItem.Text)".Substring(0, [Math]::Min(63, "os3-router — $($statusItem.Text)".Length))
         if ($s.whats_new -and -not $script:wnShown) { WhatsNew }
+        foreach ($a in @($s.alerts | Where-Object { $_.ts -gt $script:lastAlert })) {  # 90% limit, fallback switch
+            $icon.ShowBalloonTip(8000, "os3-router", $a.text, "Warning"); $script:lastAlert = $a.ts
+        }
     } catch {
         $icon.Icon = $red; $statusItem.Text = "router not running"; $icon.Text = "os3-router — router not running"
     }

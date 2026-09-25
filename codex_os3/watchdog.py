@@ -9,13 +9,14 @@ The fix is restarting the agent through its own scheduler (os3.restart_agent).
 
 Rules decide; the optional Jev advisor (jev.py) only adds a second opinion for the
 ambiguous "is this silence expected?" case and is recorded alongside."""
-import json, time, urllib.request
+import json, os, time, urllib.request
 
-from . import config, jev, os3, platform_util, store
+from . import config, jev, notify, os3, platform_util, store
 
 TICK_S = 15
 QUIET_S = 120                 # silence after a quick tool call before we suspect the tunnel
 RESTART_COOLDOWN_S = 600
+DISCONNECTED_S = 180          # agent "disconnected" this long -> restart it
 DEDUPE_S = 600
 # tool calls after which silence is normal: OS3 waits for the user, a worker, or a schedule
 SLOW_TOOLS = {"wait", "ask_user", "create_task", "steer_task", "schedule_add", "schedule_update",
@@ -23,14 +24,16 @@ SLOW_TOOLS = {"wait", "ask_user", "create_task", "steer_task", "schedule_add", "
 
 
 def last_response():
-    r = store.q("SELECT * FROM requests WHERE status IN ('ok','limit') ORDER BY done_ts DESC LIMIT 1")
+    r = store.q("SELECT * FROM requests WHERE status IN ('ok','limit') AND source != 'selftest' "
+                "ORDER BY done_ts DESC LIMIT 1")
     return r[0] if r else None
 
 
 def last_request_ts():
     """Last time OS3 reached the router: a request starting, ending (also cancelled or failed)
     or still running. Any of these proves the tunnel works."""
-    r = store.q("SELECT MAX(ts) t, MAX(done_ts) d, SUM(status='running' AND ts > ?) n FROM requests",
+    r = store.q("SELECT MAX(ts) t, MAX(done_ts) d, SUM(status='running' AND ts > ?) n FROM requests "
+                "WHERE source != 'selftest'",
                 (time.time() - 900,))[0]
     return time.time() if r["n"] else max(r["t"] or 0, r["d"] or 0)
 
@@ -50,6 +53,7 @@ def snapshot():
                                    "result": resp["result"], "calls": calls, "task": resp["task"]},
         "last_request_ago_s": round(now - last_request_ts()) if last_request_ts() else None,
         "agent": os3.status(),
+        "agent_status_age_s": round(os3.status_age()),
         "agent_execs_since_response": len(execs),
         "agent_aborted_task_since_response": bool(aborts),
         "agent_abort_ago_s": round(now - aborts[0]) if aborts else None,
@@ -87,23 +91,30 @@ def rules(s):
     if agent and not agent.get("running") and os3.installed():
         out.append({"kind": "agent_down", "level": "error", "action": "restart_agent",
                     "msg": "rabbit-agent is not running"})
+    elif agent.get("status") not in (None, "connected") and (s.get("agent_status_age_s") or 0) >= DISCONNECTED_S:
+        # e.g. after sleep: its own reconnect gave up (seen on MacBooks)
+        out.append({"kind": "agent_down", "level": "error", "action": "restart_agent",
+                    "msg": f"rabbit-agent {agent.get('status')} for {s['agent_status_age_s'] // 60} min"})
     ul = s["usage_limit"]
     if ul and time.time() - ul["ts"] < 3600:
         out.append({"kind": "usage_limit", "level": "warn", "action": None,
                     "msg": f"{ul.get('backend', 'codex').title()} usage limit reached"
                            + (f", resets at {ul['resets']}" if ul.get("resets") else "")})
     for b, lim in (s["limits"] or {}).items():
-        if (lim.get("s_pct") or 0) >= 90:
-            out.append({"kind": "weekly_limit_high", "level": "warn", "action": None,
-                        "msg": f"weekly {b.title()} limit at {lim['s_pct']:.0f}%"})
+        for pk, rk, win in (("p_pct", "p_reset", "5-hour"), ("s_pct", "s_reset", "weekly")):
+            pct, reset = lim.get(pk) or 0, lim.get(rk)
+            if pct >= 90 and not (reset and reset < time.time()):  # a passed reset means it's fresh again
+                name = "Claude" if b == "claude" else "ChatGPT (Codex)"
+                out.append({"kind": "limit_high", "level": "warn", "action": None, "key": f"{b}:{win}:{reset}",
+                            "msg": f"{name} {win} limit at {pct:.0f}%"})
     if s["hangs_30m"] >= 3:
         out.append({"kind": "codex_unstable", "level": "warn", "action": None,
                     "msg": f"{s['hangs_30m']} model hangs/failed retries in 30 min"})
     return out
 
 
-def _recent(kind, within):
-    r = store.q("SELECT MAX(ts) t FROM events WHERE source='watchdog' AND kind=?", (kind,))
+def _recent(kind, within, source="watchdog"):
+    r = store.q("SELECT MAX(ts) t FROM events WHERE source=? AND kind=?", (source, kind))
     return r and r[0]["t"] and time.time() - r[0]["t"] < within
 
 
@@ -134,7 +145,11 @@ def tick(cfg):
     for f in findings:
         if f["action"] and resp.get("id") and acted_for == resp.get("id"):
             continue  # already handled this stalled reply; don't restart again for it
-        if f["action"] is None and _recent(f["kind"], 3 * 3600 if f["kind"] == "weekly_limit_high" else DEDUPE_S):
+        if f["kind"] == "limit_high":
+            fb = any((cfg.get("fallback") or {}).values())
+            notify.desktop(f["msg"] + (": the fallback model takes over at 100%" if fb else
+                                       ": set a fallback model in os3-router's Settings"), key=f["key"])
+        if f["action"] is None and _recent(f["kind"], 3 * 3600 if f["kind"] == "limit_high" else DEDUPE_S):
             continue
         acted = None
         if f["action"] == "restart_agent" and cfg.get("restart_agent"):
@@ -152,6 +167,28 @@ def tick(cfg):
     store.kv_set("watchdog_last", {"ts": s["now"], "findings": findings,
                                    "agent": s["agent"], "advice": advice})
     return findings
+
+
+def keepalive(stop=None):
+    """For OS3 nodes without the router (`codex_os3 keepalive`, installed with --node-only):
+    restart the rabbit-agent when it stopped or stays disconnected, e.g. after sleep."""
+    while not (stop and stop.is_set()):
+        try:
+            a = os3.status()
+            why = ("not running" if a and not a.get("running") else
+                   f"{a.get('status')} for {int(os3.status_age())} s"
+                   if a.get("status") not in (None, "connected") and os3.status_age() >= DISCONNECTED_S else None)
+            if why and os3.installed() and not _recent("restart_agent", 300, source="keepalive"):
+                ok, msg = os3.restart_agent()
+                store.event("restart_agent", f"agent {why} -> {msg}", source="keepalive", level="info" if ok else "error")
+            from . import __version__, updater
+            updater.maybe(config.load())  # same automatic updates as the router
+            with open(os.path.join(updater.APP, "codex_os3", "__init__.py")) as f:
+                if f'"{__version__}"' not in f.read():
+                    return  # updated on disk: exit so launchd/systemd starts the new version
+        except Exception as e:  # never die
+            store.event("keepalive_error", f"{type(e).__name__}: {e}", source="keepalive", level="error")
+        (stop.wait if stop else time.sleep)(60)
 
 
 def _owner(me):

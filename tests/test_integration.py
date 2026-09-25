@@ -72,11 +72,12 @@ class Service(unittest.TestCase):
         r = urllib.request.urlopen(req, timeout=timeout)
         return r.read().decode() if raw else json.load(r)
 
-    def api_post(self, path, header=True):
+    def api_post(self, path, header=True, body=None):
         h = {"Content-Type": "application/json"}
         if header:
             h["X-Codex-OS3"] = "1"
-        return json.load(urllib.request.urlopen(urllib.request.Request(self.url("/api/" + path), b"{}", h), timeout=30))
+        return json.load(urllib.request.urlopen(urllib.request.Request(
+            self.url("/api/" + path), json.dumps(body or {}).encode(), h), timeout=30))
 
     # -- tests ----------------------------------------------------------------
     def test_auth(self):
@@ -128,6 +129,22 @@ class Service(unittest.TestCase):
         c = d["choices"][0]["message"]["content"]
         self.assertIn("usage limit", c)
         self.assertIn("9:11 PM", c)
+
+    def test_fallback_at_usage_limit(self):
+        self.api_post("config", body={"fallback": {"worker": {"model": "gpt-6-luna", "effort": "low"}}})
+        try:
+            worker = {"tools": WEATHER, "messages": [{"role": "system", "content": "You are a worker agent."},
+                                                     {"role": "user", "content": "FAKE_LIMIT_SOL weather?"}]}
+            d = self.post(worker)["choices"][0]["message"]  # gpt-6-sol hits the limit -> same request on luna
+            self.assertEqual(d["tool_calls"][0]["function"]["name"], "get_weather")
+            r = self.get("/api/requests?limit=1")[0]
+            self.assertEqual((r["mode"], r["model"].startswith("gpt-6-luna")), ("fallback", True))
+            worker["messages"][1]["content"] = "FAKE_LIMIT_SOL again?"
+            self.post(worker)  # while limited: straight to the fallback
+            self.assertIn("fallback", self.get("/api/requests?limit=1")[0]["mode"])
+            self.assertIn("codex", self.get("/api/status")["fallback_active"])
+        finally:
+            self.api_post("config", body={"fallback": {}})
 
     def test_hang_is_killed(self):
         t = time.time()

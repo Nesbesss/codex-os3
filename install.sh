@@ -2,6 +2,7 @@
 # os3-router installer (macOS + Linux)
 #   curl -fsSL https://raw.githubusercontent.com/Nesbesss/os3-router/main/install.sh | bash
 # Options: --uninstall [--purge]   --no-app   --no-wait   --port N
+#          --node-only   only a keep-alive for this machine's rabbit-agent (OS3 nodes that don't run the router)
 # Env:     CODEX_OS3_SRC=<local checkout>  (install from a folder instead of GitHub)
 #          CODEX_OS3_REF=<branch|tag>       (default: main)
 set -euo pipefail
@@ -12,11 +13,12 @@ HOME_DIR="${CODEX_OS3_HOME:-$HOME/.codex-os3}"
 APP_DIR="$HOME_DIR/app"
 LABEL="ai.codexos3.router"
 OS="$(uname -s)"
-NO_APP=0; NO_WAIT=0; UNINSTALL=0; PURGE=0; PORT=""
+NO_APP=0; NO_WAIT=0; UNINSTALL=0; PURGE=0; PORT=""; NODE_ONLY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --uninstall) UNINSTALL=1 ;; --purge) PURGE=1 ;; --no-app) NO_APP=1 ;; --no-wait) NO_WAIT=1 ;;
     --port) PORT="$2"; shift ;;
+    --node-only) NODE_ONLY=1 ;;
     *) echo "unknown option $1"; exit 2 ;;
   esac
   shift
@@ -30,20 +32,25 @@ tty_in() { if [ -r /dev/tty ]; then "$@" </dev/tty; else "$@"; fi; }
 
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 UNIT="$HOME/.config/systemd/user/codex-os3.service"
+KLABEL="ai.codexos3.keepalive"
+KPLIST="$HOME/Library/LaunchAgents/$KLABEL.plist"
+KUNIT="$HOME/.config/systemd/user/codex-os3-keepalive.service"
 
 # --------------------------------------------------------------------------- uninstall
 if [ "$UNINSTALL" = 1 ]; then
   b "Uninstalling os3-router"
   if [ "$OS" = Darwin ]; then
     launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
-    rm -f "$PLIST"
+    launchctl bootout "gui/$(id -u)/$KLABEL" 2>/dev/null || true
+    rm -f "$PLIST" "$KPLIST"
     for i in $(seq 1 30); do pgrep -f -- "-m codex_os3 (serve|worker)" >/dev/null || break; sleep 1; done
     pkill -9 -f -- "-m codex_os3 (serve|worker)" 2>/dev/null || true
     pkill -f "Contents/MacOS/CodexOS3" 2>/dev/null || true
     rm -rf "$HOME/Applications/OS3 Router.app" "$HOME/Applications/Codex OS3.app"
   else
-    systemctl --user disable --now codex-os3 2>/dev/null || true
-    rm -f "$UNIT"; systemctl --user daemon-reload 2>/dev/null || true
+    systemctl --user disable --now codex-os3 codex-os3-keepalive 2>/dev/null || true
+    rm -f "$UNIT" "$KUNIT"; systemctl --user daemon-reload 2>/dev/null || true
+    pkill -f -- "-m codex_os3 keepalive" 2>/dev/null || true
     { crontab -l 2>/dev/null | grep -v "codex-os3-keepalive" || true; } | crontab - 2>/dev/null || true
     pkill -f -- "-m codex_os3 (serve|worker)" 2>/dev/null || true
   fi
@@ -75,6 +82,7 @@ fi
 ok "python: $PY ($("$PY" -c 'import platform; print(platform.python_version())'))"
 
 # --------------------------------------------------------------------------- codex cli
+if [ "$NODE_ONLY" = 0 ]; then
 if ! command -v codex >/dev/null 2>&1; then
   b "Installing the Codex CLI"
   if command -v npm >/dev/null 2>&1; then npm install -g @openai/codex >/dev/null
@@ -99,6 +107,8 @@ if ! "$CODEX" login status >/dev/null 2>&1; then
   tty_in "$CODEX" login || die "codex login failed"
 fi
 ok "codex is logged in"
+
+fi
 
 # --------------------------------------------------------------------------- rabbit-agent
 if [ -f "$HOME/.rabbit-agent/runtime/rabbit-agent.status.json" ]; then
@@ -128,6 +138,44 @@ VERSION="$("$PY" -c "import sys; sys.path.insert(0, '$APP_DIR'); import codex_os
 ok "os3-router $VERSION in $APP_DIR"
 
 cd "$APP_DIR"
+if [ "$NODE_ONLY" = 1 ]; then
+  b "Installing the node keep-alive"
+  "$PY" -c "from codex_os3 import store, __version__; store.kv_set('whatsnew_seen', __version__)"
+  if [ "$OS" = Darwin ]; then
+    mkdir -p "$(dirname "$KPLIST")"
+    cat > "$KPLIST" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$KLABEL</string>
+  <key>ProgramArguments</key><array><string>$PY</string><string>-m</string><string>codex_os3</string><string>keepalive</string></array>
+  <key>WorkingDirectory</key><string>$APP_DIR</string>
+  <key>EnvironmentVariables</key><dict><key>CODEX_OS3_HOME</key><string>$HOME_DIR</string></dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>$HOME_DIR/keepalive.log</string>
+  <key>StandardErrorPath</key><string>$HOME_DIR/keepalive.log</string>
+</dict></plist>
+PLIST
+    launchctl bootout "gui/$(id -u)/$KLABEL" 2>/dev/null || true
+    launchctl bootstrap "gui/$(id -u)" "$KPLIST" || die "launchctl bootstrap failed"
+  elif command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
+    mkdir -p "$(dirname "$KUNIT")"
+    printf '[Unit]\nDescription=os3-router keep-alive for the rabbit-agent\n\n[Service]\nWorkingDirectory=%s\nEnvironment=CODEX_OS3_HOME=%s\nExecStart=%s -m codex_os3 keepalive\nRestart=always\nRestartSec=10\n\n[Install]\nWantedBy=default.target\n' \
+      "$APP_DIR" "$HOME_DIR" "$PY" > "$KUNIT"
+    systemctl --user daemon-reload && systemctl --user enable --now codex-os3-keepalive >/dev/null 2>&1 || die "systemctl --user enable failed"
+    systemctl --user restart codex-os3-keepalive
+    loginctl enable-linger "$USER" >/dev/null 2>&1 || warn "could not enable lingering (sudo loginctl enable-linger $USER)"
+  else
+    KEEP="cd $APP_DIR && pgrep -f -- '-m codex_os3 keepalive' >/dev/null || CODEX_OS3_HOME=$HOME_DIR nohup $PY -m codex_os3 keepalive >> $HOME_DIR/keepalive.log 2>&1 &"
+    { crontab -l 2>/dev/null | grep -v "codex-os3-keepalive" || true
+      echo "*/2 * * * * $KEEP # codex-os3-keepalive"; } | crontab - || die "could not write your crontab"
+    sh -c "$KEEP"
+  fi
+  ok "keep-alive running: it restarts this machine's rabbit-agent when it stops or stays disconnected (e.g. after sleep)"
+  ok "it updates itself; remove it with: bash install.sh --uninstall"
+  exit 0
+fi
 [ -n "$PORT" ] && "$PY" -c "from codex_os3 import config; config.save({'port': int('$PORT')})"
 "$PY" -c "from codex_os3 import config; config.save({'codex_bin': '$CODEX'}); config.ensure_key()"
 # this installer brings the matching menu bar app itself; the router only updates apps on later updates

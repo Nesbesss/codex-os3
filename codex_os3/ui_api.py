@@ -7,7 +7,7 @@ from .platform_util import pid_alive
 
 J = "application/json"
 EDITABLE = {"model", "effort", "bind", "port", "captures", "retention_days", "jev_key",
-            "webhook", "watchdog", "restart_agent", "auto_update", "max_codex", "max_images", "role_routing", "roles"}
+            "webhook", "watchdog", "restart_agent", "auto_update", "fallback", "share_reports", "max_codex", "max_images", "role_routing", "roles"}
 
 
 def clean_roles(value):
@@ -35,6 +35,23 @@ def _ver(v):
         return (999,)  # dev/fake builds: don't block
 
 
+_cache = {}
+
+
+def cached(fn):
+    """CLI checks spawn processes; the setup page polls, so reuse a result for 20 s."""
+    def wrap(cfg=None, fresh=False):
+        k = (fn.__name__, (cfg or {}).get("codex_bin"), (cfg or {}).get("claude_bin"))
+        hit = _cache.get(k)
+        if not fresh and hit and time.time() - hit[0] < 20:
+            return hit[1]
+        v = fn(cfg)
+        _cache[k] = (time.time(), v)
+        return v
+    return wrap
+
+
+@cached
 def codex_info(cfg=None):
     b = platform_util.native_bin((cfg or {}).get("codex_bin") or shutil.which("codex"))  # the one the router runs
     info = {"path": b, "version": None, "logged_in": None}
@@ -52,6 +69,7 @@ def codex_info(cfg=None):
     return info
 
 
+@cached
 def claude_info(cfg):
     b = platform_util.native_bin(cfg.get("claude_bin") or shutil.which("claude"))
     info = {"path": b, "logged_in": None, "detail": ""}
@@ -154,13 +172,15 @@ def handle(method, path, data, q, cfg):
         return 200, {"version": __version__, "time": time.time(), "limits": lims.get("codex") or next(iter(lims.values()), None),
                      "limits_all": lims, "latest_release": store.kv_get("update_latest"),
                      "whats_new": whatsnew()["show"],
+                     "fallback_active": [b for b in ("codex", "claude") if (store.kv_get("limited:" + b) or 0) > time.time()],
+                     "alerts": store.kv_get("alerts") or [],
                      "usage_limit": store.kv_get("usage_limit"), "agent": os3.status(),
                      "watchdog": wd, "running": running, "model": cfg["model"],
                      "endpoint": f"http://localhost:{cfg['port']}/v1"}, J
     if method == "GET" and path == "usage":
         return 200, usage(float(q.get("hours", 24))), J
     if method == "GET" and path == "requests":
-        rows = store.q("SELECT id, ts, done_ts, task, model, role, stream, tools, msgs, bytes, imgs, mode, status, "
+        rows = store.q("SELECT id, ts, done_ts, task, source, model, role, stream, tools, msgs, bytes, imgs, mode, status, "
                        "error, result, calls, in_tok, cached_tok, out_tok FROM requests ORDER BY ts DESC LIMIT ?",
                        (int(q.get("limit", 100)),))
         return 200, rows, J
@@ -175,6 +195,24 @@ def handle(method, path, data, q, cfg):
         if not re.fullmatch(r"[0-9a-f]{8,40}", task):
             return 400, {"error": "bad task id"}, J
         return 200, export.build(task, cfg), "application/zip"
+    if method == "GET" and path == "onboarding":
+        from . import onboarding
+        return 200, onboarding.status(cfg), J
+    if method == "POST" and path == "selffix":
+        from . import selffix
+        return 200, selffix.diagnose(cfg, str(data.get("problem", "")), str(data.get("step", ""))), J
+    if method == "POST" and path == "selftest":
+        from . import selffix
+        return 200, selffix.selftest(cfg), J
+    if method == "POST" and path == "selffix/action":
+        from . import selffix
+        name = str(data.get("id", ""))
+        try:
+            args = json.loads(data.get("args_json") or "{}") if name == "set_role_model" else {}
+        except ValueError:
+            args = {}
+        ok, msg = selffix.run_action(cfg, name, args if isinstance(args, dict) else {})
+        return 200, {"ok": ok, "message": msg}, J
     if method == "GET" and path == "whatsnew":
         return 200, whatsnew(), J
     if method == "POST" and path == "whatsnew/seen":
@@ -192,6 +230,10 @@ def handle(method, path, data, q, cfg):
         upd = {k: v for k, v in data.items() if k in EDITABLE}
         if "roles" in upd:
             upd["roles"] = dict(cfg.get("roles") or {}, **clean_roles(upd["roles"]))
+        if "fallback" in upd:  # empty model = no fallback for that role
+            upd["fallback"] = clean_roles({r: f for r, f in (upd["fallback"] or {}).items() if (f or {}).get("model")})
+        if "share_reports" in upd:
+            upd["share_reports"] = bool(upd["share_reports"])
         if "jev_key" in upd and upd["jev_key"] is True:
             upd.pop("jev_key")  # UI echoes the masked boolean back; keep the stored key
         new = config.save(upd)

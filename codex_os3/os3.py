@@ -25,6 +25,14 @@ def status():
     return s
 
 
+def status_age():
+    """Seconds since the agent last changed its status (the file is rewritten on every change)."""
+    try:
+        return time.time() - os.path.getmtime(STATUS)
+    except OSError:
+        return 0
+
+
 def _tail(path, max_bytes):
     try:
         with open(path, "rb") as f:

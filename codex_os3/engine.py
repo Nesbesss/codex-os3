@@ -7,7 +7,7 @@ main codex call (resumed session when possible, one fresh retry on failure/hang)
   -> tool-call repair (JSON, node ids, dlam scripts, missing feed_image)."""
 import json, os, time, uuid
 
-from . import claude_runner, codex_runner, config, prompt as P, repair, roles, sessions, store
+from . import claude_runner, codex_runner, config, notify, prompt as P, repair, roles, sessions, store
 from .codex_runner import ClientGone, CodexHung, UsageLimit
 
 
@@ -30,6 +30,11 @@ class Turn:
         # e.g. gpt-6-sol-medium, claude-sonnet-5-medium
         self.model = roles.pick(cfg, self.role, self.requested, self.os3_effort)
         self.backend = roles.backend(self.model)
+        self.fell_back = False
+        if (store.kv_get("limited:" + self.backend) or 0) > time.time():  # this subscription just hit its limit
+            fb = self.fallback_model()
+            if fb:
+                self.model, self.backend, self.fell_back = fb, roles.backend(fb), True
         self.msgs = body.get("messages") or []
         tools = body.get("tools") or []
         if body.get("functions"):  # legacy shape
@@ -56,6 +61,16 @@ class Turn:
             store.kv_set("os3_params", keys)
             store.event("os3_params", json.dumps({k: v if isinstance(v, (str, int, float, bool, dict)) and len(json.dumps(v)) < 200
                                                   else "…" for k, v in extra.items()})[:500])
+
+    def fallback_model(self, err=None):
+        if err is not None and err.plan:
+            return None
+        fb = roles.pick_fallback(self.cfg, self.role, self.os3_effort)
+        if not fb or fb == self.model:
+            return None
+        if roles.backend(fb) != self.backend and (store.kv_get("limited:" + roles.backend(fb)) or 0) > time.time():
+            return None  # the fallback's subscription is out too
+        return fb
 
     def ev(self, kind, msg, level="info", data=None):
         log(f"[{self.task}] {kind}: {msg}")
@@ -110,8 +125,22 @@ class Turn:
         try:
             try:
                 raw, self.tid = self.codex(prompt, images.files, resume=thread, keep=self.tracked)
-            except (ClientGone, UsageLimit):
+            except ClientGone:
                 raise
+            except UsageLimit as e:
+                fb = self.fallback_model(e)
+                if not fb:
+                    raise
+                # retry this same request on the fallback; later requests go there directly for 15 min
+                name = "Claude" if self.backend == "claude" else "Codex"
+                store.kv_set("limited:" + self.backend, time.time() + 900)
+                msg = f"{name} usage limit reached: {roles.LABEL.get(self.role, self.role)} switched to {fb}"
+                self.ev("fallback", msg + (f" (resets at {e.resets})" if e.resets else ""), "warn")
+                notify.desktop(msg, key="fallback:" + self.backend)
+                self.model, self.backend, self.fell_back = fb, roles.backend(fb), True
+                images, prompt = self.build(full=True)
+                mode = "fallback"
+                raw, self.tid = self.codex(prompt, images.files, keep=self.tracked)
             except Exception as e:
                 if not thread and not isinstance(e, CodexHung):
                     raise
@@ -150,8 +179,8 @@ class Turn:
             if self.tracked:  # success stores the thread; failure drops it (next turn starts fresh)
                 sessions.done(self.task, self.tid, self.msgs, ok)
             if status != "error":
-                store.request_end(self.rid, status=status, mode=mode, imgs=len(images.files),
-                                  **self._result_fields())
+                store.request_end(self.rid, status=status, mode=mode + ("·fallback" if self.fell_back and mode != "fallback" else ""),
+                                  imgs=len(images.files), model=self.model, **self._result_fields())
             self.capture(prompt, getattr(self, "_raw", None))
 
     def corrections(self, raw, prompt, images):

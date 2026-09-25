@@ -71,7 +71,7 @@ def request_end(rid, **f):
     f.setdefault("done_ts", time.time())
     if isinstance(f.get("calls"), (list, tuple)):
         f["calls"] = json.dumps(f["calls"])
-    keys = [k for k in f if k in ("done_ts", "imgs", "mode", "status", "error", "result", "calls",
+    keys = [k for k in f if k in ("done_ts", "imgs", "mode", "status", "error", "result", "calls", "model",
                                   "in_tok", "cached_tok", "out_tok", "reason_tok")]
     _w(f"UPDATE requests SET {','.join(k + '=?' for k in keys)} WHERE id=?",
        [f[k] for k in keys] + [rid])
@@ -106,6 +106,8 @@ def latest_limits():
 def event(kind, msg, task=None, source="router", level="info", data=None):
     _w("INSERT INTO events(ts,task,source,kind,level,msg,data) VALUES(?,?,?,?,?,?,?)",
        (time.time(), task, source, kind, level, msg, json.dumps(data) if data is not None else None))
+    from . import report  # opt-in problem reports (does nothing unless the user said yes)
+    report.maybe_send(kind, f"[{source}] {msg}", level)
 
 
 # -- sessions (survive worker reloads) ----------------------------------------

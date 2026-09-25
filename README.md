@@ -39,7 +39,9 @@ The installer:
 4. installs the menu bar app (macOS) or tray icon (Windows)
 5. opens the setup page and **waits until OS3 connects**
 
-Then, in OS3 go to **Settings → API keys**, provider **local**, and enter:
+Then open the dashboard (`http://localhost:11435`): the **setup wizard** walks you through OS3 step by step
+with screenshots, checks each step live, and has a **Test my setup** button. In short, in OS3 go to
+**Settings → API keys**, provider **Local model**, and enter:
 
 | field | value |
 |---|---|
@@ -65,6 +67,20 @@ when Claude Code is installed. The dashboard shows token use per role.
 **Several nodes?** Install the router on **one** machine, ideally the one that is always on, and
 pick it as the LLM device. Tasks still run on every node. No Tailscale, ngrok, or open ports are needed,
 because rabbit relays model calls through the rabbit-agent of the device you picked.
+
+**Other OS3 machines** (nodes that don't run the router) can get a small keep-alive that reconnects their
+rabbit-agent after sleep or a lost connection:
+```sh
+curl -fsSL https://raw.githubusercontent.com/Nesbesss/os3-router/main/install.sh | bash -s -- --node-only
+```
+
+**Fallback at the usage limit.** In Settings → Models, give a role a fallback model (e.g. Standard:
+`gpt-6-sol`, fallback `claude-sonnet-5`). When a subscription hits its limit, the same request is retried on
+the fallback, OS3 keeps working, and the router tries the main model again every 15 minutes.
+
+**Get help (Self fix).** Describe the problem in the dashboard; the router adds its own diagnostics (checks,
+recent errors, the rabbit-agent log; never your messages or keys), asks `gpt-6-luna` for the cause and
+offers fixes from a fixed, safe list (update Codex, restart the agent, …) that only run when you click them.
 
 ## What it does for OS3
 
@@ -177,6 +193,11 @@ The router does not load your `~/.claude/settings.json`; it uses the login you m
 `os3-router doctor`: `cd ~/.codex-os3/app && python3 -m codex_os3 doctor` (the internal names kept the old name)
 
 ## Privacy and security
+
+- **Problem reports are opt-in.** The wizard asks once. If you say yes, errors and what Self fix or the router
+  fixed are sent to the developer's Discord channel: version, OS, a random install id and the event, with keys
+  and tokens removed. Never message contents, names or hostnames. Switch it off in Settings anytime.
+
 
 - The router listens on `127.0.0.1` only by default, and `/v1` always needs the API key
 - It stores **metadata** (timings, token counts, tool names), not message contents. "Captures"

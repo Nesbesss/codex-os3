@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0 (2026-09-25)
+- **New setup wizard:** step by step, with screenshots of every OS3 screen, Copy buttons, live checks and a
+  clear message when something is wrong (e.g. an old connection or the wrong port). Opens by itself until
+  you're connected
+- **Test my setup:** one click sends OS3's own connection test and a worker tool call through the router, so
+  you know it works before you touch OS3
+- **Get help (Self fix):** describe the problem; the router looks at its own diagnostics, explains the
+  cause and offers fixes you approve with one click
+- **Fallback at the usage limit:** pick a fallback model per role (e.g. Claude Sonnet when Codex is out);
+  OS3 keeps working and switches back after the reset
+- **Codex updates itself** when it's too old for the current models
+- **Heads-up at 90%:** a notification when a subscription's 5-hour or weekly limit passes 90%
+- **Keep-alive for your other OS3 machines:** `install.sh --node-only` keeps their rabbit-agent connected
+  (e.g. after sleep). The router itself now also restarts an agent that stays disconnected
+- **Redesigned dashboard:** one card per subscription, the models in use, readable activity; Watchdog and
+  Tasks are now one Activity tab
+- Optional, anonymous problem reports to the developer (you're asked once; no messages, names or keys)
+
 ## 0.2.6 (2026-09-25)
 - **This screen:** after every update you see what's new, once, in the dashboard, the menu bar app (Mac)
   or the tray icon (Windows). Continue hides it everywhere

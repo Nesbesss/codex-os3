@@ -2,7 +2,7 @@
 the account's rate limits."""
 import json, os, re, subprocess, tempfile, threading, time
 
-from . import config, platform_util, sessions
+from . import config, platform_util, sessions, store
 
 WORKDIR = os.path.join(config.HOME, "work")
 
@@ -176,6 +176,8 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
                 pass
     if not text:
         msg = " | ".join(errs) or ("\n".join(err_lines) or "no output from codex")[-600:]
+        if "newer version" in msg.lower():  # e.g. "requires a newer version of Codex": the watchdog updates it
+            store.kv_set("codex_outdated", time.time())
         if "usage limit" in msg.lower():
             m = RESET_RE.search(msg)
             raise UsageLimit(msg, m.group(1).strip() if m else "")

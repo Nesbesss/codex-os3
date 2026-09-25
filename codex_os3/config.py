@@ -30,6 +30,8 @@ DEFAULTS = {
     "watchdog": True,
     "restart_agent": True,    # watchdog may restart a stuck rabbit-agent
     "auto_update": True,      # install new releases from GitHub (tested first, zero downtime)
+    "fallback": {},           # role -> {model, effort} used while the role's subscription is at its limit
+    "share_reports": None,    # anonymous problem reports to the developer: None = not asked yet
 }
 
 _lock = threading.Lock()

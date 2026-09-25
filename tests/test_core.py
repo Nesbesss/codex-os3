@@ -357,5 +357,40 @@ class WhatsNewTest(unittest.TestCase):
         self.assertFalse(ui_api.whatsnew()["show"])
 
 
+class ReportTest(unittest.TestCase):
+    def test_opt_in_redacted_and_rate_limited(self):
+        from codex_os3 import config, report
+        sent = []
+        orig, report._post = report._post, sent.append
+        try:
+            config.save({"share_reports": None})
+            store.kv_set("report_times", [])
+            report.maybe_send("error", "boom")
+            time.sleep(0.2)
+            self.assertEqual(sent, [])  # not asked yet = nothing leaves the machine
+            config.save({"share_reports": True})
+            report.maybe_send("worker_start", "noise")  # not a reported kind
+            report.maybe_send("error", "failed with key cx-0123456789abcdef0123456789abcdef")
+            time.sleep(0.2)
+            self.assertEqual(len(sent), 1)
+            self.assertNotIn("0123456789abcdef", sent[0])
+            for _ in range(20):
+                report.maybe_send("error", "again")
+            time.sleep(0.3)
+            self.assertEqual(len(sent), report.PER_HOUR)
+        finally:
+            report._post = orig
+            config.save({"share_reports": None})
+
+
+class AgentKeepaliveRuleTest(unittest.TestCase):
+    def test_disconnected_for_minutes_restarts(self):
+        s = Watchdog.snap(Watchdog(), last_response=None, agent={"running": True, "status": "disconnected"},
+                          agent_status_age_s=400)
+        self.assertIn(("agent_down", "restart_agent"), [(f["kind"], f["action"]) for f in watchdog.rules(s)])
+        s["agent_status_age_s"] = 30  # its own reconnect may still work
+        self.assertEqual([f["kind"] for f in watchdog.rules(s)], [])
+
+
 if __name__ == "__main__":
     unittest.main()

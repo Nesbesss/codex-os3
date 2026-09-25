@@ -8,6 +8,7 @@ OS3 in "local" mode sends the same model id for everything, but the requests dif
 import json, os, shutil
 
 ROLES = ("chat", "worker", "background")
+LABEL = {"chat": "Small (main chat)", "worker": "Standard (workers)", "background": "Background"}
 CHAT_TOOLS = {"create_task", "notify_before_act", "steer_task", "cancel_task", "report_task_on", "render_ui"}
 WORKER_TOOLS = {"computer_use", "computer_use_prepare", "shell", "file_read", "file_write", "file_edit",
                 "dummy_system", "feed_image"}
@@ -69,6 +70,15 @@ def pick(cfg, role, requested, os3_effort=None):
     # often and OS3 has no Background slider, so the dashboard decides there
     effort = (r.get("effort") or os3_effort if role == "background" else os3_effort or r.get("effort")) or cfg["effort"]
     return f"{model}-{fit_effort(model, effort)}"
+
+
+def pick_fallback(cfg, role, os3_effort=None):
+    """The model this role switches to while its subscription is at its usage limit, or None."""
+    f = (cfg.get("fallback") or {}).get(role) or {}
+    if not f.get("model"):
+        return None
+    effort = (f.get("effort") or os3_effort if role == "background" else os3_effort or f.get("effort")) or cfg["effort"]
+    return f"{f['model']}-{fit_effort(f['model'], effort)}"
 
 
 def codex_split(model):
