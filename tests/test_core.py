@@ -299,5 +299,27 @@ class UpdaterTest(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(config.HOME, "reload.request")))
 
 
+class EffortTest(unittest.TestCase):
+    def test_os3_slider_wins(self):
+        from codex_os3 import roles
+        cfg = {"role_routing": True, "model": "gpt-6-luna", "effort": "medium",
+               "roles": {"worker": {"model": "gpt-6-sol", "effort": "medium"}}}
+        self.assertEqual(roles.requested_effort({"reasoning_effort": "xhigh"}), "xhigh")
+        self.assertEqual(roles.requested_effort({"reasoning": {"effort": "High"}}), "high")
+        self.assertIsNone(roles.requested_effort({"reasoning": "weird"}))
+        self.assertEqual(roles.pick(cfg, "worker", "gpt-6-luna", "xhigh"), "gpt-6-sol-xhigh")
+        self.assertEqual(roles.pick(cfg, "worker", "gpt-6-luna"), "gpt-6-sol-medium")
+        cfg["roles"]["background"] = {"model": "gpt-6-luna", "effort": "low"}
+        self.assertEqual(roles.pick(cfg, "background", "gpt-6-luna", "high"), "gpt-6-luna-low")
+        self.assertEqual(roles.pick(dict(cfg, role_routing=False), "worker", "gpt-6-luna", "high"), "gpt-6-luna-high")
+        self.assertEqual(roles.pick(dict(cfg, role_routing=False), "worker", "gpt-6-luna-low", "high"), "gpt-6-luna-low")
+        from codex_os3 import prompt as P
+        self.assertEqual(P.forced_tool({"tool_choice": {"type": "function", "function": {"name": "emit_facts"}}}), "emit_facts")
+        self.assertEqual(P.forced_tool({"tool_choice": "required"}), "*")
+        self.assertIsNone(P.forced_tool({"tool_choice": "auto"}))
+        # an effort the model lacks goes to the nearest one it has
+        self.assertEqual(roles.fit_effort("claude-haiku-4-5", "xhigh"), "high")
+
+
 if __name__ == "__main__":
     unittest.main()

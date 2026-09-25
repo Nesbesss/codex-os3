@@ -84,7 +84,7 @@ Codex is an agent CLI, not a chat API, so the router does a lot of translation:
 - **Hang handling:** no Codex activity for 90 s means the call is killed and retried once
 - **Usage limit** shows up in OS3 as a clear message with the reset time, not "something went wrong"
 - **Zero-downtime updates:** upgrades swap the worker process while running requests finish
-- **Automatic updates:** every 6 h it checks for a new release, runs that release's tests on your machine,
+- **Automatic updates:** every hour it checks for a new release, runs that release's tests on your machine,
   and only then switches over (keeps the previous version; off in Settings)
 
 ## Dashboard, menu bar app, watchdog

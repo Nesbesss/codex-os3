@@ -35,14 +35,45 @@ BACKGROUND_MARKERS = {"emit_facts", "emit_merged_soul", "extract_file_signals", 
                       "report_correction"}
 
 
-def pick(cfg, role, requested):
-    """-> model string for codex_runner ("<slug>-<effort>"). With routing off, the model OS3 asked for."""
+EFFORT_ORDER = ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
+
+
+def requested_effort(body):
+    """The effort OS3's reasoning sliders send (OpenAI's two request shapes), or None."""
+    r = body.get("reasoning")
+    e = body.get("reasoning_effort") or (r.get("effort") if isinstance(r, dict) else None)
+    return e.lower() if isinstance(e, str) and e.lower() in EFFORT_ORDER else None
+
+
+def fit_effort(model, effort):
+    """The nearest effort this model supports (e.g. OS3's "minimal" on a Claude model -> "low")."""
+    m = next((x for x in available_models() + CLAUDE if x["slug"] == model), None)
+    if not m or effort in m["efforts"]:
+        return effort
+    i = EFFORT_ORDER.index(effort)
+    return min(m["efforts"], key=lambda e: abs(EFFORT_ORDER.index(e) - i) if e in EFFORT_ORDER else 99)
+
+
+def pick(cfg, role, requested, os3_effort=None):
+    """-> model string for the runners ("<slug>-<effort>"). The model comes from the role (or, with
+    routing off, from OS3); the effort from OS3's reasoning slider when it sends one, else from the
+    dashboard."""
     if not cfg.get("role_routing", True):
-        return requested or cfg["model"]
+        model = requested or cfg["model"]
+        if os3_effort and codex_split(model)[1] is None:
+            return f"{model}-{fit_effort(model, os3_effort)}"
+        return model
     r = (cfg.get("roles") or {}).get(role) or {}
     model = r.get("model") or requested or cfg["model"]
-    effort = r.get("effort") or cfg["effort"]
-    return f"{model}-{effort}"
+    # OS3's sliders are Small and Standard; it sends Small's on background calls too, but those run
+    # often and OS3 has no Background slider, so the dashboard decides there
+    effort = (r.get("effort") or os3_effort if role == "background" else os3_effort or r.get("effort")) or cfg["effort"]
+    return f"{model}-{fit_effort(model, effort)}"
+
+
+def codex_split(model):
+    from .codex_runner import split_model
+    return split_model(model, None)
 
 
 def backend(model):

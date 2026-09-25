@@ -117,6 +117,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
     <h2>Connect OS3</h2>
     <p class="muted">In OS3: Settings → API keys → provider <b>local</b>. Pick <b>this machine</b> as the device (the router must run on the same machine as the device).</p>
     <div class="kv" id="vals"></div>
+    <p class="muted" id="modelnote"></p>
     <div class="row"><button class="btn" id="rotate">Rotate API key</button><span class="muted">After rotating, delete and re-register the connection in OS3.</span></div>
     <p id="conn" class="status" style="margin-top:14px"></p>
   </div>
@@ -145,7 +146,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
 <section id="settings" hidden>
   <div class="card" style="max-width:760px">
     <h2>Models</h2>
-    <p class="muted">Like OS3's own model picker: OS3's local mode sends one model for everything, so the router recognises who is asking and uses the model you set here. <b>Small</b> is the main chat you talk to, <b>Standard</b> runs the workers that carry out tasks (shell, files, computer use), <b>Background</b> handles memory and review calls, which run often, so a light model saves limit.</p>
+    <p class="muted">Like OS3's own model picker: OS3's local mode sends one model for everything, so the router recognises who is asking and uses the model you set here. <b>Small</b> is the main chat you talk to, <b>Standard</b> runs the workers that carry out tasks (shell, files, computer use), <b>Background</b> handles memory and review calls, which run often, so a light model saves limit. <b>Effort:</b> if OS3's own reasoning sliders (Small / Standard) send an effort, that one is used for Small and Standard. Background always uses the effort set here (OS3 has no Background slider).</p>
     <label class="check"><input type="checkbox" id="routing"> Pick a model per role</label>
     <div id="rolegrid" class="rolegrid"></div>
     <div class="row"><button class="btn primary" id="saveroles">Save models</button><span class="muted" id="rolesmsg"></span></div>
@@ -240,9 +241,17 @@ async function dash(st) {
 
 async function setup(st) {
   const c = await api("config");
-  const vals = [["endpoint", `http://localhost:${c.port}/v1`], ["model id", c.model], ["api key", c.api_key], ["context window", "200000"]];
+  const vals = [["endpoint", `http://localhost:${c.port}/v1`], [c.role_routing !== false ? "model id (label)" : "model id", c.model], ["api key", c.api_key], ["context window", "200000"]];
   $("#vals").innerHTML = vals.map(([k, v]) => `<span>${k}</span><code>${esc(v)}</code><button class="btn" data-copy="${esc(v)}">Copy</button>`).join("");
   $("#vals").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy(b.dataset.copy));
+  const ms = await api("models"), nm = (slug) => (ms.find(m => m.slug === slug) || {name: slug}).name;
+  const R = c.roles || {};
+  $("#modelnote").innerHTML = c.role_routing !== false
+    ? `<b>Models actually used</b> (the model id above is only a label; keep it as is):<br>` +
+      ["chat", "worker", "background"].map(r => `${ROLE_LABEL[r]}: <b>${esc(nm((R[r] || {}).model || c.model))}</b>`).join(" · ") +
+      `<br>Effort comes from OS3's reasoning sliders; Background uses ${esc((R.background || {}).effort || c.effort)}. ` +
+      `<a href="#settings" onclick="document.querySelector('nav button[data-tab=settings]').click();return false">Change models</a>`
+    : `“Pick a model per role” is off, so the model id above (<b>${esc(c.model)}</b>) is used for everything.`;
   const d = await api("doctor");
   $("#doctor").innerHTML = d.map(x => `<div class="check"><span class="${x.ok ? "ok" : "bad"}">${x.ok ? "✓" : "✗"}</span><span>${esc(x.check)} <span class="muted">— ${esc(x.detail)}</span></span></div>`).join("");
   const called = d.find(x => x.check.startsWith("OS3 has called"));
@@ -265,7 +274,7 @@ async function tasks() {
 
 const FIELDS = [
   ["watchdog", "Watchdog", "bool", null, "Detects a dead rabbit-agent tunnel, limits and stuck tasks."],
-  ["auto_update", "Automatic updates", "bool", null, "Checks GitHub every 6 h; a new release is installed only if its tests pass on this machine, without interrupting OS3."],
+  ["auto_update", "Automatic updates", "bool", null, "Checks GitHub every hour; a new release is installed only if its tests pass on this machine, without interrupting OS3."],
   ["restart_agent", "Let the watchdog restart a stuck rabbit-agent", "bool"],
   ["jev_key", "TypeSafe Jev key (optional)", "password", null, "Gives the watchdog a second opinion on ambiguous situations."],
   ["webhook", "Alert webhook (optional)", "text", null, "e.g. https://ntfy.sh/your-topic — receives watchdog alerts."],

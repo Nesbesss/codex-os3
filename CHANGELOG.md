@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.3 (2026-09-25)
+- **OS3's reasoning sliders are used:** the effort OS3 sends (`reasoning_effort`, Small / Standard) now
+  decides the effort; Background keeps the dashboard's effort (OS3 has no Background slider)
+- OS3's `tool_choice` (e.g. "call emit_facts now") is passed to the model, with one retry if it answers in text
+  instead; fixes occasional false "emit_facts is not available"
+- Setup page shows the models actually used per role; OS3's model id is only a label
+- Doctor checks the Codex CLI the router actually runs (no false "version ✗" from an old copy on PATH)
+- Update check every hour instead of every 6 h
+
 ## 0.2.2 (2026-09-25)
 - **Automatic updates:** checks GitHub every 6 h; a new release is installed only after its own test suite
   passes on your machine, the previous version is kept in `app.prev`, and the switch is zero-downtime.

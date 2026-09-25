@@ -34,8 +34,8 @@ def _ver(v):
         return (999,)  # dev/fake builds: don't block
 
 
-def codex_info():
-    b = shutil.which("codex")
+def codex_info(cfg=None):
+    b = (cfg or {}).get("codex_bin") or shutil.which("codex")  # the one the router runs
     info = {"path": b, "version": None, "logged_in": None}
     if not b:
         return info
@@ -72,7 +72,7 @@ def uses_claude(cfg):
 
 
 def doctor(cfg):
-    c = codex_info()
+    c = codex_info(cfg)
     a = os3.status()
     first = store.q("SELECT MIN(ts) t, MAX(ts) l, COUNT(*) n FROM requests")[0]
     extra = []

@@ -244,6 +244,20 @@ VERIFY_NUDGE = (
     "is verified, reply with kind=\"final\" and the final answer (corrected if needed).")
 
 
+FORCE_NUDGE = ("\n\nREQUIRED: the app requires a tool call in this reply ({which}). Answer with "
+               "kind=\"tool_call\"; the tool is available.")
+
+
+def forced_tool(body):
+    """OpenAI tool_choice -> the tool name that must be called, "*" for any tool, or None."""
+    tc = body.get("tool_choice")
+    if tc == "required":
+        return "*"
+    if isinstance(tc, dict):
+        return (tc.get("function") or {}).get("name") or tc.get("name")
+    return None
+
+
 VALIDATE_NUDGE = (
     "\n\nYour previous reply's tool calls were NOT executed, because the app would reject "
     "them:\n{problems}\nReply again with the same intent and corrected calls.")

@@ -26,7 +26,9 @@ class Turn:
         self.cfg, self.body, self.alive, self.source = cfg, body, alive, source
         self.role = roles.classify(body)
         self.requested = body.get("model") or cfg["model"]
-        self.model = roles.pick(cfg, self.role, self.requested)  # e.g. gpt-6-sol-medium, claude-sonnet-5-medium
+        self.os3_effort = roles.requested_effort(body)
+        # e.g. gpt-6-sol-medium, claude-sonnet-5-medium
+        self.model = roles.pick(cfg, self.role, self.requested, self.os3_effort)
         self.backend = roles.backend(self.model)
         self.msgs = body.get("messages") or []
         tools = body.get("tools") or []
@@ -35,12 +37,25 @@ class Turn:
         self.tools = tools
         self.task = sessions.key(self.msgs, tools) if self.msgs else None
         self.schema = P.TOOL_SCHEMA if tools else None
+        self.forced = P.forced_tool(body) if tools else None  # OS3's tool_choice (e.g. emit_facts)
         # device list lives in the system prompt; a resumed turn's prompt is only the delta
         self.node_src = "\n".join(P.text_of(m.get("content")) for m in self.msgs
                                   if m.get("role") == "system")
         self.rid = store.request_start(self.task, source, self.model, bool(body.get("stream")),
                                        len(tools), len(self.msgs), len(json.dumps(body)), self.role)
         self.tid = None
+        self._note_params(body)
+
+    @staticmethod
+    def _note_params(body):
+        """Record which request options OS3 sends (e.g. its reasoning sliders), once per new set.
+        Only short scalar values; never messages or tools."""
+        extra = {k: v for k, v in body.items() if k not in ("messages", "tools", "functions")}
+        keys = sorted(extra)
+        if store.kv_get("os3_params") != keys:
+            store.kv_set("os3_params", keys)
+            store.event("os3_params", json.dumps({k: v if isinstance(v, (str, int, float, bool, dict)) and len(json.dumps(v)) < 200
+                                                  else "…" for k, v in extra.items()})[:500])
 
     def ev(self, kind, msg, level="info", data=None):
         log(f"[{self.task}] {kind}: {msg}")
@@ -51,6 +66,8 @@ class Turn:
         imgs = P.Images(src, self.cfg["max_images"])
         p = (P.flatten(self.msgs, self.tools, imgs) if full else
              P.flatten(delta, self.tools, imgs, header=False, all_messages=self.msgs))
+        if self.forced:
+            p += P.FORCE_NUDGE.format(which="any tool" if self.forced == "*" else f"call `{self.forced}`")
         streak = P.observe_streak(self.msgs) if self.tools else 0
         if streak >= P.LOOP_LIMIT:
             p += P.LOOP_NUDGE.format(n=streak)
@@ -147,6 +164,13 @@ class Turn:
             self.ev("false_unavailable", d["content"][:160])
             r, t = self.extra("false_unavailable", P.RETRY_NUDGE.strip(), prompt + P.RETRY_NUDGE, images.files)
             if r:
+                raw, self.tid = r, t or self.tid
+
+        if self.forced and (P.parse_decision(raw) or {}).get("kind") != "tool_call":
+            self.ev("forced_tool", f"{self.forced} required but got a text answer; retrying once", "warn")
+            nudge = P.FORCE_NUDGE.format(which="any tool" if self.forced == "*" else f"call `{self.forced}`")
+            r, t = self.extra("forced_tool", nudge.strip(), prompt + nudge, images.files)
+            if r and (P.parse_decision(r) or {}).get("kind") == "tool_call":
                 raw, self.tid = r, t or self.tid
 
         problems = repair.decision_problems(P.parse_decision(raw) or {}, tools, node_src)
