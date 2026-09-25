@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.4 (2026-09-25)
+- Update check every 30 min
+
 ## 0.2.3 (2026-09-25)
 - **OS3's reasoning sliders are used:** the effort OS3 sends (`reasoning_effort`, Small / Standard) now
   decides the effort; Background keeps the dashboard's effort (OS3 has no Background slider)

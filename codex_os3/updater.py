@@ -1,4 +1,4 @@
-"""Automatic updates from GitHub releases. Every hour the watchdog owner checks the latest
+"""Automatic updates from GitHub releases. Every 30 min the watchdog owner checks the latest
 release; a newer one is downloaded, its own offline test suite must pass, then its files are
 copied over the install (previous version kept in app.prev) and the service reloads without
 downtime. Only for installs made by the installer (~/.codex-os3/app); off with auto_update=false."""
@@ -7,7 +7,7 @@ import io, json, os, shutil, subprocess, sys, tarfile, tempfile, time, urllib.re
 from . import __version__, config, store
 
 REPO = "Nesbesss/os3-router"
-EVERY_S = 3600
+EVERY_S = 1800
 APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
