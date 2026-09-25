@@ -28,8 +28,11 @@ def last_response():
 
 
 def last_request_ts():
-    r = store.q("SELECT MAX(ts) AS t FROM requests")
-    return (r[0]["t"] or 0) if r else 0
+    """Last time OS3 reached the router: a request starting, ending (also cancelled or failed)
+    or still running. Any of these proves the tunnel works."""
+    r = store.q("SELECT MAX(ts) t, MAX(done_ts) d, SUM(status='running' AND ts > ?) n FROM requests",
+                (time.time() - 900,))[0]
+    return time.time() if r["n"] else max(r["t"] or 0, r["d"] or 0)
 
 
 def snapshot():

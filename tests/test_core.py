@@ -221,6 +221,28 @@ class Watchdog(unittest.TestCase):
         store.kv_set("watchdog_owner", {"pid": other, "ts": time.time() - 999})  # stale lease
         self.assertTrue(watchdog._owner(os.getpid()))
 
+    def test_cancelled_request_counts_as_activity(self):
+        # a reply with tool calls at t-150; OS3's next request started earlier (a retry of a slow
+        # turn) and was cancelled at t-20: OS3 reached us, so the tunnel is not dead
+        now = time.time()
+        store.db().execute("DELETE FROM requests")
+        r1 = store.request_start("t", "x", "m", False, 1, 2, 10)
+        r2 = store.request_start("t", "x", "m", False, 1, 2, 10)
+        store.db().execute("UPDATE requests SET ts=? WHERE id=?", (now - 300, r1))
+        store.db().execute("UPDATE requests SET ts=? WHERE id=?", (now - 200, r2))
+        store.request_end(r1, status="ok", result="tool_call", calls=["ls", "shell"], done_ts=now - 150)
+        store.request_end(r2, status="gone", done_ts=now - 20)
+        self.assertLess(now - watchdog.last_request_ts(), 30)
+        r3 = store.request_start("t", "x", "m", False, 1, 2, 10)  # still running = alive
+        self.assertLess(now - watchdog.last_request_ts(), 2)
+        store.request_end(r3, status="ok")
+
+    def test_hang_limit_grows_with_effort(self):
+        from codex_os3.codex_runner import idle_limit
+        self.assertEqual(idle_limit({"hang_idle_s": 90}, "medium"), 90)
+        self.assertEqual(idle_limit({"hang_idle_s": 90}, "high"), 180)
+        self.assertEqual(round(idle_limit({"hang_idle_s": 90}, "xhigh")), 300)
+
     def test_final_answer_is_quiet(self):
         s = self.snap(last_response={"ago_s": 900, "result": "final", "calls": [], "task": "t"})
         self.assertEqual(self.kinds(s), [])

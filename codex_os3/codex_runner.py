@@ -84,6 +84,13 @@ def build_cmd(cfg, model, schema_file=None, image_files=(), resume=None):
     return cmd + ["--", "-"]
 
 
+def idle_limit(cfg, effort):
+    """Seconds without output before a run counts as hung. Codex prints nothing while it
+    thinks, and higher efforts think longer: killing a run that is still thinking only
+    restarts the work."""
+    return cfg["hang_idle_s"] * {"high": 2, "xhigh": 10 / 3, "max": 10 / 3, "ultra": 10 / 3}.get(effort, 1)
+
+
 RESET_RE = re.compile(r"try again (?:at|in) ([^.\"\\]+)", re.I)
 
 
@@ -133,7 +140,8 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
             if not alive():
                 raise ClientGone()
         try:
-            out, err_lines, thread = _supervise(cfg, cmd, prompt, alive, resume)
+            idle = idle_limit(cfg, split_model(model, cfg["effort"])[1])
+            out, err_lines, thread = _supervise(dict(cfg, hang_idle_s=idle), cmd, prompt, alive, resume)
         finally:
             sem.release()
     finally:

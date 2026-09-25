@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (2026-09-25)
+- Watchdog no longer restarts the rabbit-agent while OS3 is still reaching the router (a request running,
+  cancelled or failed after our reply counts as a sign of life); seen in a tester's log
+- Hang detection gives high/xhigh efforts more time to think (180 s / 300 s instead of 90 s) instead of
+  killing a run that is still working and starting over
+
 ## 0.2.0 (2026-09-25)
 - Renamed to **os3-router** (was codex-os3); internal names, paths and services are unchanged, so upgrades
   need nothing

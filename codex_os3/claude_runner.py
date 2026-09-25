@@ -3,7 +3,7 @@ own account) as a decision backend, the same way codex_runner runs `codex exec`.
 signature and return value as codex_runner.run."""
 import base64, json, os, shutil, time
 
-from .codex_runner import WORKDIR, ClientGone, UsageLimit, _supervise, slots, split_model
+from .codex_runner import WORKDIR, ClientGone, UsageLimit, _supervise, idle_limit, slots, split_model
 
 SYSTEM = ("You are the decision engine of an app. The app runs the tools listed in the prompt and "
           "sends you their results. Answer only through the structured output.")
@@ -73,7 +73,8 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
         if not alive():
             raise ClientGone()
     try:
-        out, err, thread = _supervise(cfg, cmd, message(prompt, images), alive, resume,
+        idle = idle_limit(cfg, split_model(model, cfg["effort"])[1])
+        out, err, thread = _supervise(dict(cfg, hang_idle_s=idle), cmd, message(prompt, images), alive, resume,
                                       cwd=WORKDIR, final='"type":"result"', env=environ(cmd[0]))
     finally:
         sem.release()
