@@ -11,7 +11,8 @@ Rules decide; the optional Jev advisor (jev.py) only adds a second opinion for t
 ambiguous "is this silence expected?" case and is recorded alongside."""
 import json, os, time, urllib.request
 
-from . import config, jev, notify, os3, platform_util, store
+from . import config, jev, os3, platform_util, store
+from .notify import desktop
 
 TICK_S = 15
 QUIET_S = 120                 # silence after a quick tool call before we suspect the tunnel
@@ -147,7 +148,7 @@ def tick(cfg):
             continue  # already handled this stalled reply; don't restart again for it
         if f["kind"] == "limit_high":
             fb = any((cfg.get("fallback") or {}).values())
-            notify.desktop(f["msg"] + (": the fallback model takes over at 100%" if fb else
+            desktop(f["msg"] + (": the fallback model takes over at 100%" if fb else
                                        ": set a fallback model in os3-router's Settings"), key=f["key"])
         if f["action"] is None and _recent(f["kind"], 3 * 3600 if f["kind"] == "limit_high" else DEDUPE_S):
             continue
