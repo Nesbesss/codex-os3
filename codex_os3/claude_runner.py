@@ -3,6 +3,7 @@ own account) as a decision backend, the same way codex_runner runs `codex exec`.
 signature and return value as codex_runner.run."""
 import base64, json, os, shutil, time
 
+from . import platform_util
 from .codex_runner import WORKDIR, ClientGone, UsageLimit, _supervise, idle_limit, slots, split_model
 
 SYSTEM = ("You are the decision engine of an app. The app runs the tools listed in the prompt and "
@@ -12,7 +13,7 @@ EFFORTS = {"minimal": "low", "ultra": "max"}  # codex effort names without a Cla
 
 
 def binary(cfg):
-    return cfg.get("claude_bin") or shutil.which("claude") or "claude"
+    return platform_util.native_bin(cfg.get("claude_bin") or shutil.which("claude") or "claude")
 
 
 def environ(bin_path):

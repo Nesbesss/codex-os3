@@ -49,7 +49,9 @@ if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
     Write-Host "Installing the Codex CLI"
     npm install -g @openai/codex | Out-Null
 }
-$Codex = (Get-Command codex -ErrorAction SilentlyContinue).Source
+# -CommandType Application: codex.cmd/.exe, not the codex.ps1 shim (Windows can't start a .ps1
+# directly: "[WinError 193] not a valid Win32 application"); the router then picks npm's codex.exe
+$Codex = (Get-Command codex -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
 if (-not $Codex) { Die "codex not on PATH after install (open a new terminal and re-run)" }
 Ok "codex: $Codex"
 & $Codex login status *> $null

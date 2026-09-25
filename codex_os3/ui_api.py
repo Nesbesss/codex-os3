@@ -2,6 +2,7 @@
 import json, os, re, shutil, subprocess, time
 
 from . import __version__, config, export, os3, roles, store
+from . import platform_util
 from .platform_util import pid_alive
 
 J = "application/json"
@@ -35,7 +36,7 @@ def _ver(v):
 
 
 def codex_info(cfg=None):
-    b = (cfg or {}).get("codex_bin") or shutil.which("codex")  # the one the router runs
+    b = platform_util.native_bin((cfg or {}).get("codex_bin") or shutil.which("codex"))  # the one the router runs
     info = {"path": b, "version": None, "logged_in": None}
     if not b:
         return info
@@ -52,7 +53,7 @@ def codex_info(cfg=None):
 
 
 def claude_info(cfg):
-    b = cfg.get("claude_bin") or shutil.which("claude")
+    b = platform_util.native_bin(cfg.get("claude_bin") or shutil.which("claude"))
     info = {"path": b, "logged_in": None, "detail": ""}
     if not b:
         return info

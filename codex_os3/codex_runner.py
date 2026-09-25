@@ -65,7 +65,7 @@ def known_features(codex):
 
 def build_cmd(cfg, model, schema_file=None, image_files=(), resume=None):
     model, effort = split_model(model, cfg["effort"])
-    codex = cfg.get("codex_bin") or "codex"
+    codex = platform_util.native_bin(cfg.get("codex_bin") or "codex")
     known = known_features(codex)
     disabled = [f for f in DISABLED if f in known] if known else list(DISABLED)
     cmd = [codex, "exec", *(["resume"] if resume else []), "--json",

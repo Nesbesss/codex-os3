@@ -321,5 +321,24 @@ class EffortTest(unittest.TestCase):
         self.assertEqual(roles.fit_effort("claude-haiku-4-5", "xhigh"), "high")
 
 
+class WindowsBinTest(unittest.TestCase):
+    def test_npm_shims_resolve_to_native_exe(self):
+        from codex_os3.platform_util import native_bin
+        npm = tempfile.mkdtemp()
+        for f in ("codex", "codex.cmd", "codex.ps1"):
+            open(os.path.join(npm, f), "w").close()
+        ps1 = os.path.join(npm, "codex.ps1")
+        self.assertEqual(native_bin(ps1, windows=False), ps1)
+        self.assertEqual(native_bin(ps1, windows=True), os.path.join(npm, "codex.cmd"))  # no exe yet
+        exe_dir = os.path.join(npm, "node_modules", "@openai", "codex", "node_modules", "@openai", "codex-win32-x64",
+                               "vendor", "x86_64-pc-windows-msvc", "codex")
+        os.makedirs(exe_dir)
+        exe = os.path.join(exe_dir, "codex.exe")
+        open(exe, "w").close()
+        for shim in ("codex.ps1", "codex.cmd", "codex"):
+            self.assertEqual(native_bin(os.path.join(npm, shim), windows=True), exe, shim)
+        self.assertEqual(native_bin(exe, windows=True), exe)
+
+
 if __name__ == "__main__":
     unittest.main()

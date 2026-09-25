@@ -1,8 +1,25 @@
 """Process helpers that behave the same on macOS, Linux and Windows.
 (Careful: on Windows os.kill(pid, 0) terminates the process instead of probing it.)"""
-import os, signal, subprocess, sys
+import glob, os, signal, subprocess, sys
 
 WINDOWS = sys.platform == "win32"
+
+
+def native_bin(path, windows=WINDOWS):
+    """Windows: npm installs codex/claude as .ps1 / .cmd shims plus an extensionless sh script,
+    and only .exe/.cmd can be started directly ("[WinError 193] not a valid Win32 application"
+    for the others). Prefer the native .exe the npm package ships, else the .cmd shim."""
+    if not windows or not path or path.lower().endswith(".exe"):
+        return path
+    base = os.path.splitext(path)[0] if path.lower().endswith((".ps1", ".cmd", ".bat")) else path
+    name, d = os.path.basename(base), os.path.dirname(base)
+    hits = sorted(glob.glob(os.path.join(d, "node_modules", "@*", "**", name + ".exe"), recursive=True))
+    if hits:
+        return hits[0]
+    for ext in (".exe", ".cmd"):
+        if os.path.isfile(base + ext):
+            return base + ext
+    return path
 
 
 def pid_alive(pid):

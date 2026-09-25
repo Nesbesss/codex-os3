@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.5 (2026-09-25)
+- Windows: fixed "[WinError 193] %1 is not a valid Win32 application". The installer saved npm's `codex.ps1`
+  shim, which Windows can't start; the router now runs npm's native `codex.exe` (or the `.cmd` shim) whatever
+  path is saved, and the installer saves a runnable path. Reported by a tester
+
 ## 0.2.4 (2026-09-25)
 - Update check every 30 min
 
