@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 (unreleased)
+- Renamed to **os3-router** (was codex-os3); internal names, paths and services are unchanged, so upgrades
+  need nothing
+- **Claude Code backend:** any role can use a Claude model (`claude-sonnet-5`, `claude-opus-5-5`, …) through
+  the official `claude` CLI and your own Claude Code login; mix it with Codex per role
+- Dashboard shows the 5-hour and weekly limits per subscription; `doctor` checks Claude Code when a role uses it
+- Token card follows the chart's range (it was empty right after midnight)
+
 ## 0.1.1 (2026-09-24)
 - Per-role models: **Small** (main chat), **Standard** (workers), **Background** (memory/review), chosen in the
   dashboard from the models your Codex account offers; token use per role

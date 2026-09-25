@@ -1,4 +1,4 @@
-// Menu bar companion for the codex-os3 router service.
+// Menu bar companion for the os3-router service.
 // The router itself runs as a LaunchAgent (installed by install.sh); this app shows its
 // state and offers the everyday actions. It only talks to the router's local API.
 import AppKit
@@ -234,7 +234,7 @@ struct MenuContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("codex-os3").font(.headline)
+                Text("OS3 Router").font(.headline)
                 Spacer()
                 if let v = model.status?.version { Text("v\(v)").font(.caption).foregroundStyle(.secondary) }
             }

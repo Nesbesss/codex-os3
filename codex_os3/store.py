@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS requests (
 CREATE INDEX IF NOT EXISTS req_ts ON requests(ts);
 CREATE INDEX IF NOT EXISTS req_task ON requests(task);
 CREATE TABLE IF NOT EXISTS limits (
-  ts REAL, p_pct REAL, p_reset REAL, p_window INT, s_pct REAL, s_reset REAL, s_window INT);
+  ts REAL, p_pct REAL, p_reset REAL, p_window INT, s_pct REAL, s_reset REAL, s_window INT, backend TEXT);
 CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY, ts REAL, task TEXT, source TEXT, kind TEXT, level TEXT, msg TEXT, data TEXT);
 CREATE INDEX IF NOT EXISTS ev_ts ON events(ts);
@@ -41,6 +41,8 @@ def db():
                 cols = {r[1] for r in c.execute("PRAGMA table_info(requests)")}
                 if "role" not in cols:  # databases from 0.1.0
                     c.execute("ALTER TABLE requests ADD COLUMN role TEXT")
+                if "backend" not in {r[1] for r in c.execute("PRAGMA table_info(limits)")}:  # before 0.2.0
+                    c.execute("ALTER TABLE limits ADD COLUMN backend TEXT DEFAULT 'codex'")
                 break
             except sqlite3.OperationalError:
                 time.sleep(0.2 * (attempt + 1))
@@ -85,13 +87,20 @@ def add_tokens(rid, usage):
         usage.get("output_tokens", 0), usage.get("reasoning_output_tokens", 0), rid))
 
 
-def add_limits(rl):
+def add_limits(rl, backend="codex"):
     if not rl:
         return
     p, s = rl.get("primary") or {}, rl.get("secondary") or {}
-    _w("INSERT INTO limits VALUES(?,?,?,?,?,?,?)",
+    _w("INSERT INTO limits VALUES(?,?,?,?,?,?,?,?)",
        (time.time(), p.get("used_percent"), p.get("resets_at"), p.get("window_minutes"),
-        s.get("used_percent"), s.get("resets_at"), s.get("window_minutes")))
+        s.get("used_percent"), s.get("resets_at"), s.get("window_minutes"), backend))
+
+
+def latest_limits():
+    """{backend: newest limits row}"""
+    return {r["backend"] or "codex": r for r in
+            q("SELECT l.* FROM limits l JOIN (SELECT COALESCE(backend,'codex') b, MAX(ts) t FROM limits "
+              "GROUP BY b) m ON COALESCE(l.backend,'codex')=m.b AND l.ts=m.t")}
 
 
 def event(kind, msg, task=None, source="router", level="info", data=None):

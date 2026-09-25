@@ -39,7 +39,7 @@ def summarize(reqs, events):
     kinds = [e["kind"] for e in events]
     last = reqs[-1] if reqs else {}
     if any(r["status"] == "limit" for r in reqs):
-        return "Codex usage limit reached."
+        return "Usage limit reached."
     if "tunnel_dead" in kinds:
         return "The rabbit-agent's LLM tunnel died (OS3 stopped calling the router)."
     if last.get("status") == "error":
@@ -66,7 +66,7 @@ def build(task, cfg=None):
     timeline = sorted([dict(r, type="request") for r in reqs] + [dict(e, type="event") for e in events],
                       key=lambda x: x["ts"])
 
-    lines = [f"# codex-os3 task export `{task}`", "",
+    lines = [f"# os3-router task export `{task}`", "",
              f"**Summary:** {summarize(reqs, events)}", "",
              f"- requests: {len(reqs)}, errors: {sum(r['status'] == 'error' for r in reqs)}",
              f"- tokens: input {sum(r['in_tok'] or 0 for r in reqs):,} "

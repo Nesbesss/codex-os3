@@ -1,4 +1,4 @@
-# codex-os3 tray icon for Windows (beta). Polls the router's local API and
+# os3-router tray icon for Windows (beta). Polls the router's local API and
 # offers the same actions as the macOS menu bar app. Started at logon by install.ps1.
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 
@@ -17,18 +17,18 @@ function Post($path) {
 $icon = New-Object System.Windows.Forms.NotifyIcon
 $icon.Visible = $true
 $menu = New-Object System.Windows.Forms.ContextMenuStrip
-$statusItem = $menu.Items.Add("codex-os3: …"); $statusItem.Enabled = $false
+$statusItem = $menu.Items.Add("os3-router: …"); $statusItem.Enabled = $false
 $limitItem = $menu.Items.Add("limits: …"); $limitItem.Enabled = $false
 $menu.Items.Add("-") | Out-Null
 $menu.Items.Add("Open dashboard", $null, { Start-Process "http://localhost:$(Port)/" }) | Out-Null
 $menu.Items.Add("Copy OS3 settings", $null, {
     $c = Api "config"
     [System.Windows.Forms.Clipboard]::SetText("endpoint: http://localhost:$($c.port)/v1`nmodel id: $($c.model)`napi key: $($c.api_key)`ncontext window: 200000")
-    $icon.ShowBalloonTip(2000, "codex-os3", "OS3 settings copied", "Info")
+    $icon.ShowBalloonTip(2000, "os3-router", "OS3 settings copied", "Info")
 }) | Out-Null
 $menu.Items.Add("Copy API key", $null, { [System.Windows.Forms.Clipboard]::SetText((Api "config").api_key) }) | Out-Null
 $menu.Items.Add("Restart rabbit-agent", $null, {
-    try { $r = Post "agent/restart"; $icon.ShowBalloonTip(3000, "codex-os3", $r.message, "Info") } catch {}
+    try { $r = Post "agent/restart"; $icon.ShowBalloonTip(3000, "os3-router", $r.message, "Info") } catch {}
 }) | Out-Null
 $menu.Items.Add("Reload router", $null, { try { Post "reload" | Out-Null } catch {} }) | Out-Null
 $menu.Items.Add("-") | Out-Null
@@ -56,9 +56,9 @@ function Update {
         $icon.Icon = if (-not $agentOk -or $errs.Count) { $red } elseif ($s.limits.s_pct -ge 90) { $amber } else { $green }
         $statusItem.Text = if ($agentOk) { "rabbit-agent connected · $($s.model)" } else { "rabbit-agent: $($s.agent.status)" }
         $limitItem.Text = "5h: $([math]::Round($s.limits.p_pct))%  ·  weekly: $([math]::Round($s.limits.s_pct))%"
-        $icon.Text = "codex-os3 — $($statusItem.Text)".Substring(0, [Math]::Min(63, "codex-os3 — $($statusItem.Text)".Length))
+        $icon.Text = "os3-router — $($statusItem.Text)".Substring(0, [Math]::Min(63, "os3-router — $($statusItem.Text)".Length))
     } catch {
-        $icon.Icon = $red; $statusItem.Text = "router not running"; $icon.Text = "codex-os3 — router not running"
+        $icon.Icon = $red; $statusItem.Text = "router not running"; $icon.Text = "os3-router — router not running"
     }
 }
 $timer = New-Object System.Windows.Forms.Timer

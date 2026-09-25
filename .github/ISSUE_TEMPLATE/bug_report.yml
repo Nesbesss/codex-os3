@@ -1,5 +1,5 @@
 name: Bug report
-description: Something doesn't work with codex-os3 and OS3
+description: Something doesn't work with os3-router and OS3
 body:
   - type: markdown
     attributes:
@@ -14,7 +14,7 @@ body:
   - type: textarea
     id: doctor
     attributes:
-      label: Output of `codex-os3 doctor`
+      label: Output of `os3-router doctor`
       description: "Run: `cd ~/.codex-os3/app && python3 -m codex_os3 doctor`"
       render: text
     validations: { required: true }

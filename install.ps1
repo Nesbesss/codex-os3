@@ -1,11 +1,11 @@
-# codex-os3 installer for Windows (beta: CI-tested; not yet tested with a real rabbit-agent on Windows)
-#   irm https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.ps1 | iex
+# os3-router installer for Windows (beta: CI-tested; not yet tested with a real rabbit-agent on Windows)
+#   irm https://raw.githubusercontent.com/Nesbesss/os3-router/main/install.ps1 | iex
 # Options (when run as a file): -Uninstall [-Purge]  -NoTray  -NoWait  -Port N
 # Env: CODEX_OS3_SRC=<local checkout>, CODEX_OS3_REF=<branch|tag>
 param([switch]$Uninstall, [switch]$Purge, [switch]$NoTray, [switch]$NoWait, [int]$Port = 0)
 $ErrorActionPreference = "Stop"
 
-$Repo = "Nesbesss/codex-os3"
+$Repo = "Nesbesss/os3-router"
 $Ref = if ($env:CODEX_OS3_REF) { $env:CODEX_OS3_REF } else { "main" }
 $HomeDir = if ($env:CODEX_OS3_HOME) { $env:CODEX_OS3_HOME } else { Join-Path $env:USERPROFILE ".codex-os3" }
 $AppDir = Join-Path $HomeDir "app"
@@ -25,7 +25,7 @@ if ($Uninstall) {
     Ok "uninstalled"; exit 0
 }
 
-Write-Host "codex-os3 installer (Windows, beta)" -ForegroundColor White
+Write-Host "os3-router installer (Windows, beta)" -ForegroundColor White
 
 # --- python --------------------------------------------------------------------------
 $Py = $null

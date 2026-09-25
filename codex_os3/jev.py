@@ -15,8 +15,8 @@ DIAGNOSES = {
     "tunnel_dead": "The router asked OS3 to run tools, the rabbit-agent kept working (ran them, or "
                    "aborted the task) but OS3 never sent the follow-up model request.",
     "agent_down": "The rabbit-agent process is not running or not connected.",
-    "codex_unstable": "Codex calls repeatedly hang or fail on the router side.",
-    "usage_limit": "The Codex subscription's usage limit is reached.",
+    "codex_unstable": "Model calls repeatedly hang or fail on the router side.",
+    "usage_limit": "The model subscription's usage limit is reached.",
     "unclear": "The evidence does not support any of the above.",
 }
 
@@ -32,10 +32,10 @@ def _state(s):
         "agent_commands_run_since_reply": s.get("agent_execs_since_response"),
         "agent_aborted_task_since_reply": s.get("agent_aborted_task_since_response"),
         "agent_log_recent": s.get("agent_log_recent", [])[-8:],
-        "codex_hangs_last_30_min": s.get("hangs_30m"),
+        "model_hangs_last_30_min": s.get("hangs_30m"),
         "errors_last_30_min": s.get("errors_30m"),
         "usage_limit_recent": bool(s.get("usage_limit")),
-        "weekly_limit_used_percent": lim.get("s_pct"),
+        "weekly_limit_used_percent": max([l.get("s_pct") or 0 for l in lim.values()], default=None),
     }
 
 

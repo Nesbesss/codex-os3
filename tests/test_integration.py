@@ -143,7 +143,7 @@ class Service(unittest.TestCase):
     def test_ui_and_export(self):
         self.post({"tools": WEATHER, "messages": [{"role": "user", "content": "export me"}]})
         page = urllib.request.urlopen(self.url("/"), timeout=10).read().decode()
-        self.assertIn("codex-os3", page)
+        self.assertIn("os3-router", page)
         self.assertTrue(all(c["check"] for c in self.get("/api/doctor")))
         task = self.get("/api/tasks")[0]["task"]
         z = urllib.request.urlopen(self.url(f"/api/export?task={task}"), timeout=10).read()

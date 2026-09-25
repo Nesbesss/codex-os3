@@ -5,7 +5,7 @@ OS3 in "local" mode sends the same model id for everything, but the requests dif
   worker      background workers doing the job: "You are a worker agent", shell, computer_use, files
   background  small housekeeping calls: memory/fact extraction, reply review, titles (few or no tools)
 """
-import json, os
+import json, os, shutil
 
 ROLES = ("chat", "worker", "background")
 CHAT_TOOLS = {"create_task", "notify_before_act", "steer_task", "cancel_task", "report_task_on", "render_ui"}
@@ -45,13 +45,19 @@ def pick(cfg, role, requested):
     return f"{model}-{effort}"
 
 
-# -- the models this Codex account offers -------------------------------------
+def backend(model):
+    """"claude" for Claude models (run through Claude Code), else "codex"."""
+    m = (model or "").lower()
+    return "claude" if m.startswith("claude") or m.split("-")[0] in ("sonnet", "opus", "haiku", "fable") else "codex"
+
+
+# -- the models on offer: this Codex account's list, plus Claude if Claude Code is installed --
 
 FALLBACK = [
     {"slug": "gpt-6-luna", "name": "GPT-6-Luna", "description": "Fast and affordable model for easier tasks.",
-     "efforts": ["low", "medium", "high", "xhigh", "max"], "default_effort": "medium"},
+     "efforts": ["low", "medium", "high", "xhigh", "max"], "default_effort": "medium", "backend": "codex"},
     {"slug": "gpt-6-sol", "name": "GPT-6-Sol", "description": "Workhorse model for coding and everyday work.",
-     "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "default_effort": "medium"},
+     "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"], "default_effort": "medium", "backend": "codex"},
 ]
 
 
@@ -65,6 +71,23 @@ def available_models():
         return FALLBACK
     out = [{"slug": m["slug"], "name": m.get("display_name") or m["slug"], "description": m.get("description") or "",
             "efforts": [e["effort"] for e in m.get("supported_reasoning_levels") or []] or ["medium"],
-            "default_effort": m.get("default_reasoning_level") or "medium"}
+            "default_effort": m.get("default_reasoning_level") or "medium", "backend": "codex"}
            for m in ms if m.get("slug") and m.get("visibility", "list") == "list"]
-    return out or FALLBACK
+    return (out or FALLBACK) + (CLAUDE if claude_installed() else [])
+
+
+def claude_installed(cfg=None):
+    return bool((cfg or {}).get("claude_bin") or shutil.which("claude"))
+
+
+_E = ["low", "medium", "high", "xhigh", "max"]
+CLAUDE = [
+    {"slug": "claude-sonnet-5", "name": "Claude Sonnet 5", "description": "Claude Code · balanced speed and capability.",
+     "efforts": _E, "default_effort": "medium", "backend": "claude"},
+    {"slug": "claude-opus-5-5", "name": "Claude Opus 5.5", "description": "Claude Code · most capable; uses the most of your limits.",
+     "efforts": _E, "default_effort": "medium", "backend": "claude"},
+    {"slug": "claude-fable-5-1", "name": "Claude Fable 5.1", "description": "Claude Code.",
+     "efforts": _E, "default_effort": "medium", "backend": "claude"},
+    {"slug": "claude-haiku-4-5", "name": "Claude Haiku 4.5", "description": "Claude Code · fastest and lightest.",
+     "efforts": ["low", "medium", "high"], "default_effort": "low", "backend": "claude"},
+]

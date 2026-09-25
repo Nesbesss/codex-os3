@@ -41,7 +41,6 @@ def snapshot():
     execs = [e for e in agent_events if e.get("component") == "exec" and "completed" in e.get("message", "")
              and e["ts"] > since]
     aborts = [e["ts"] for e in agent_events if "release_all" in e.get("message", "") and e["ts"] > since]
-    lim = store.q("SELECT * FROM limits ORDER BY ts DESC LIMIT 1")
     return {
         "now": now,
         "last_response": resp and {"id": resp["id"], "ago_s": round(now - resp["done_ts"]),
@@ -56,7 +55,7 @@ def snapshot():
         "hangs_30m": store.q("SELECT COUNT(*) n FROM events WHERE kind IN ('retry','fix_failed','verify_failed') "
                              "AND ts > ?", (now - 1800,))[0]["n"],
         "errors_30m": store.q("SELECT COUNT(*) n FROM events WHERE level='error' AND ts > ?", (now - 1800,))[0]["n"],
-        "limits": lim[0] if lim else None,
+        "limits": store.latest_limits(),
         "usage_limit": store.kv_get("usage_limit"),
     }
 
@@ -88,14 +87,15 @@ def rules(s):
     ul = s["usage_limit"]
     if ul and time.time() - ul["ts"] < 3600:
         out.append({"kind": "usage_limit", "level": "warn", "action": None,
-                    "msg": "Codex usage limit reached" + (f", resets at {ul['resets']}" if ul.get("resets") else "")})
-    lim = s["limits"]
-    if lim and (lim.get("s_pct") or 0) >= 90:
-        out.append({"kind": "weekly_limit_high", "level": "warn", "action": None,
-                    "msg": f"weekly Codex limit at {lim['s_pct']:.0f}%"})
+                    "msg": f"{ul.get('backend', 'codex').title()} usage limit reached"
+                           + (f", resets at {ul['resets']}" if ul.get("resets") else "")})
+    for b, lim in (s["limits"] or {}).items():
+        if (lim.get("s_pct") or 0) >= 90:
+            out.append({"kind": "weekly_limit_high", "level": "warn", "action": None,
+                        "msg": f"weekly {b.title()} limit at {lim['s_pct']:.0f}%"})
     if s["hangs_30m"] >= 3:
         out.append({"kind": "codex_unstable", "level": "warn", "action": None,
-                    "msg": f"{s['hangs_30m']} codex hangs/failed retries in 30 min"})
+                    "msg": f"{s['hangs_30m']} model hangs/failed retries in 30 min"})
     return out
 
 
@@ -109,7 +109,7 @@ def notify(cfg, finding):
         return
     try:  # ntfy-style: POST plain text to the URL
         urllib.request.urlopen(urllib.request.Request(
-            cfg["webhook"], data=f"codex-os3: {finding['msg']}".encode(), method="POST"), timeout=10)
+            cfg["webhook"], data=f"os3-router: {finding['msg']}".encode(), method="POST"), timeout=10)
     except Exception:
         pass
 

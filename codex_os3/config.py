@@ -18,6 +18,7 @@ DEFAULTS = {
         "background": {"model": "gpt-6-luna", "effort": "low"},
     },
     "codex_bin": "",          # absolute path to codex (services often lack the user's PATH)
+    "claude_bin": "",         # same for Claude Code (only needed when a role uses a Claude model)
     "max_codex": 3,           # concurrent codex processes
     "max_images": 2,          # newest screenshots attached per turn
     "hang_idle_s": 90,        # no codex output/rollout growth for this long = hung upstream

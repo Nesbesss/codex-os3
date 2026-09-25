@@ -174,10 +174,11 @@ def run(cfg, prompt, model, schema=None, alive=lambda: True, images=(), resume=N
     return "\n".join(text), usage, thread, limits
 
 
-def _supervise(cfg, cmd, prompt, alive, thread):
-    """Run codex, killing it when the client leaves or it stops showing activity
-    (new stdout event or its rollout file growing)."""
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
+def _supervise(cfg, cmd, prompt, alive, thread, cwd=None, final=None, env=None):
+    """Run a backend CLI, killing it when the client leaves or it stops showing activity
+    (new stdout event or its session file growing). `final` marks the last stdout event
+    for CLIs that keep running after answering (claude with stream-json input)."""
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, cwd=cwd, env=env,
                          text=True, encoding="utf-8", errors="replace", **platform_util.popen_group_kwargs())
     out, err = [], []
 
@@ -187,7 +188,7 @@ def _supervise(cfg, cmd, prompt, alive, thread):
             p.stdin.close()
         except (OSError, ValueError):
             pass
-    state = {"last": time.time(), "thread": thread}
+    state = {"last": time.time(), "thread": thread, "done": False}
 
     def read_out():
         for line in p.stdout:
@@ -195,11 +196,15 @@ def _supervise(cfg, cmd, prompt, alive, thread):
             if line.startswith("{"):
                 out.append(line)
                 state["last"] = time.time()
-                if '"thread.started"' in line:
+                if '"thread.started"' in line or not state["thread"] and '"session_id"' in line:
                     try:
-                        state["thread"] = json.loads(line).get("thread_id") or state["thread"]
+                        e = json.loads(line)
+                        state["thread"] = e.get("thread_id") or e.get("session_id") or state["thread"]
                     except ValueError:
                         pass
+                if final and final in line:
+                    state["done"] = True
+                    return
 
     def read_err():
         for line in p.stderr:
@@ -212,7 +217,7 @@ def _supervise(cfg, cmd, prompt, alive, thread):
         r.start()
     start, rollout = time.time(), None
     try:
-        while p.poll() is None:
+        while p.poll() is None and not state["done"]:
             time.sleep(1)
             if not alive():
                 raise ClientGone()
@@ -230,6 +235,9 @@ def _supervise(cfg, cmd, prompt, alive, thread):
         platform_util.kill_tree(p)  # wrapper + native codex child
         p.wait()
         raise
+    if state["done"] and p.poll() is None:
+        platform_util.kill_tree(p)
+        p.wait()
     for r in readers:
         r.join(timeout=5)
     return out, err, state["thread"]

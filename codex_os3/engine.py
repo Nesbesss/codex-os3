@@ -7,7 +7,7 @@ main codex call (resumed session when possible, one fresh retry on failure/hang)
   -> tool-call repair (JSON, node ids, dlam scripts, missing feed_image)."""
 import json, os, time, uuid
 
-from . import codex_runner, config, prompt as P, repair, roles, sessions, store
+from . import claude_runner, codex_runner, config, prompt as P, repair, roles, sessions, store
 from .codex_runner import ClientGone, CodexHung, UsageLimit
 
 
@@ -26,7 +26,8 @@ class Turn:
         self.cfg, self.body, self.alive, self.source = cfg, body, alive, source
         self.role = roles.classify(body)
         self.requested = body.get("model") or cfg["model"]
-        self.model = roles.pick(cfg, self.role, self.requested)  # what codex runs, e.g. gpt-6-sol-medium
+        self.model = roles.pick(cfg, self.role, self.requested)  # e.g. gpt-6-sol-medium, claude-sonnet-5-medium
+        self.backend = roles.backend(self.model)
         self.msgs = body.get("messages") or []
         tools = body.get("tools") or []
         if body.get("functions"):  # legacy shape
@@ -57,10 +58,11 @@ class Turn:
         return imgs, p
 
     def codex(self, prompt, images=(), resume=None, keep=False):
-        text, usage, thread, limits = codex_runner.run(
+        runner = claude_runner if self.backend == "claude" else codex_runner
+        text, usage, thread, limits = runner.run(
             self.cfg, prompt, self.model, self.schema, self.alive, images, resume, keep)
         store.add_tokens(self.rid, usage)
-        store.add_limits(limits)
+        store.add_limits(limits, self.backend)
         return text, thread
 
     def extra(self, name, prompt_resume, prompt_fresh, images=()):
@@ -111,8 +113,9 @@ class Turn:
             status = "limit"
             when = f" — resets at {e.resets}" if e.resets else ""
             self.ev("usage_limit", str(e)[:200], "error")
-            store.kv_set("usage_limit", {"ts": time.time(), "resets": e.resets})
-            return {"role": "assistant", "content": f"⚠️ Codex usage limit reached{when}. "
+            name = "Claude" if self.backend == "claude" else "Codex"
+            store.kv_set("usage_limit", {"ts": time.time(), "resets": e.resets, "backend": self.backend})
+            return {"role": "assistant", "content": f"⚠️ {name} usage limit reached{when}. "
                     "Nothing was done; try again after the reset."}, "stop"
         except ClientGone:
             status = "gone"

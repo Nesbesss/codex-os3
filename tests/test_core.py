@@ -226,5 +226,27 @@ class Watchdog(unittest.TestCase):
         self.assertEqual(self.kinds(s), [])
 
 
+class ClaudeBackendTest(unittest.TestCase):
+    def test_backend_by_model(self):
+        from codex_os3 import roles
+        for m in ("claude-sonnet-5-medium", "sonnet-high", "claude-opus-5-5"):
+            self.assertEqual(roles.backend(m), "claude", m)
+        for m in ("gpt-6-luna-medium", "gpt-6-sol"):
+            self.assertEqual(roles.backend(m), "codex", m)
+
+    def test_cmd_and_limits(self):
+        from codex_os3 import claude_runner as C
+        cmd = C.build_cmd({"effort": "medium"}, "claude-opus-5-5-ultra", {"type": "object"})
+        self.assertEqual(cmd[cmd.index("--model") + 1], "claude-opus-5-5")
+        self.assertEqual(cmd[cmd.index("--effort") + 1], "max")
+        self.assertEqual(cmd[cmd.index("--tools") + 1], "")
+        self.assertIn("--no-session-persistence", cmd)
+        self.assertIn("--resume", C.build_cmd({"effort": "low"}, "claude-sonnet-5", resume="abc"))
+        rl = C.limits({"unifiedWindows": {"five_hour": {"utilization": 0.39, "resetsAt": 1},
+                                          "seven_day": {"utilization": 0.44, "resetsAt": 2}}})
+        self.assertEqual((rl["primary"]["used_percent"], rl["secondary"]["window_minutes"]), (39.0, 10080))
+        self.assertIsNone(C.limits({}))
+
+
 if __name__ == "__main__":
     unittest.main()

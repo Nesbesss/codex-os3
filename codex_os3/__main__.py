@@ -1,9 +1,9 @@
-"""codex-os3 command line.
+"""os3-router command line.
 
   serve              run the service (supervisor + worker + watchdog); used by launchd/systemd
   worker             run one HTTP worker (started by the supervisor)
   reload             swap in a fresh worker without dropping requests (after an upgrade)
-  status             service, rabbit-agent and Codex limits at a glance
+  status             service, rabbit-agent and subscription limits at a glance
   doctor             setup checks
   key [--rotate]     print (or rotate) the API key for OS3
   setup-info         the values to paste into OS3
@@ -73,18 +73,16 @@ def main(argv):
         return 1 if bad else 0
     if cmd == "status":
         from . import os3, store
-        lim = store.q("SELECT * FROM limits ORDER BY ts DESC LIMIT 1")
         from . import ui_api
-        print(f"codex-os3 {__version__}  service: {'running' if ui_api._supervisor_pid() else 'stopped'}")
+        print(f"os3-router {__version__}  service: {'running' if ui_api._supervisor_pid() else 'stopped'}")
         a = os3.status()
         print(f"rabbit-agent: {a['status']} (pid {a.get('pid')})" if a else "rabbit-agent: not installed on this machine")
-        if lim:
-            l = lim[0]
-            print(f"Codex 5h window: {l['p_pct']}% used · weekly: {l['s_pct']}% used")
+        for b, l in store.latest_limits().items():
+            print(f"{b.title()} 5h window: {l['p_pct']}% used · weekly: {l['s_pct']}% used")
         return 0
     if cmd == "export" and len(argv) > 1:
         from . import export
-        name = f"codex-os3-{argv[1]}.zip"
+        name = f"os3-router-{argv[1]}.zip"
         with open(name, "wb") as f:
             f.write(export.build(argv[1]))
         print(name)

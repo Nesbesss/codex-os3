@@ -51,8 +51,11 @@ def done(k, thread, messages, ok):
 
 
 def rollout_files(thread):
-    root = os.path.expanduser(os.environ.get("CODEX_HOME", "~/.codex"))
-    return glob.glob(os.path.join(root, "sessions", "**", f"rollout-*{thread}.jsonl"), recursive=True)
+    """A session's transcript files: codex rollouts or Claude Code session logs."""
+    codex = os.path.expanduser(os.environ.get("CODEX_HOME", "~/.codex"))
+    claude = os.path.expanduser(os.environ.get("CLAUDE_CONFIG_DIR", "~/.claude"))
+    return (glob.glob(os.path.join(codex, "sessions", "**", f"rollout-*{thread}.jsonl"), recursive=True)
+            + glob.glob(os.path.join(claude, "projects", "*", f"{thread}.jsonl")))
 
 
 def sweep():

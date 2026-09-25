@@ -11,7 +11,7 @@ LOCAL = ("127.0.0.1", "::1", "::ffff:127.0.0.1")
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
-    server_version = "codex-os3/" + __version__
+    server_version = "os3-router/" + __version__
 
     def log_message(self, fmt, *a):  # request lines are noise; the engine logs what matters
         pass
@@ -93,7 +93,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import roles
             ids = list(dict.fromkeys(cfg["models"] + [m["slug"] for m in roles.available_models()]))
             return self.send(200, {"object": "list", "data": [
-                {"id": m, "object": "model", "created": 0, "owned_by": "codex"} for m in ids]})
+                {"id": m, "object": "model", "created": 0, "owned_by": "os3-router"} for m in ids]})
         if path in ("/health", "/v1"):
             return self.send(200, {"status": "ok", "version": __version__, "pid": os.getpid()})
         if path == "/login":  # remote dashboard access: /login?key=<api key> sets a cookie

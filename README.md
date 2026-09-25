@@ -1,18 +1,22 @@
-<p align="center"><img src="assets/icon-256.png" width="128" alt="codex-os3"></p>
+<p align="center"><img src="assets/icon-256.png" width="128" alt="os3-router"></p>
 
-# codex-os3
+# os3-router
 
-Use your **Codex / ChatGPT subscription** as the LLM for **rabbit OS3**: chat, tool calling,
-workers and computer use. It includes a local dashboard, token and limit tracking, a watchdog that
+Use your **Codex / ChatGPT subscription** and/or your **Claude Code** login as the LLM for **rabbit OS3**:
+chat, tool calling, workers and computer use. Mix them per role, e.g. `gpt-6-luna` for the main chat and
+`claude-sonnet-5` for the workers. It includes a local dashboard, token and limit tracking, a watchdog that
 repairs a stuck rabbit-agent, and a menu bar app on macOS.
 
 ```
-OS3 cloud ──▶ rabbit-agent (your machine) ──▶ codex-os3 router (localhost:11435) ──▶ codex exec ──▶ your subscription
+OS3 cloud ──▶ rabbit-agent (your machine) ──▶ os3-router (localhost:11435) ──▶ codex exec / claude -p ──▶ your subscription
 ```
 
-> ⚠️ **Read first.** This drives the official Codex CLI with your own login. Check whether OpenAI's
-> terms allow using your subscription this way for a third-party app. That decision is yours. Heavy
-> agent use also burns through your 5-hour and weekly limits quickly (the dashboard shows both).
+> ⚠️ **Read first.** This drives the official Codex CLI and/or the official Claude Code CLI, unmodified, with
+> **your own** login. Check whether OpenAI's and Anthropic's terms allow using your subscription this way;
+> that decision is yours (see [Claude Code](#claude-code) for what we found). Heavy agent use also burns
+> through your 5-hour and weekly limits quickly (the dashboard shows both).
+
+> The project was called **codex-os3** before 0.2.0; old links redirect, and existing installs keep working.
 
 ## Install
 
@@ -20,16 +24,16 @@ On the machine that runs your OS3 node (rabbit-agent), in a terminal **on that m
 
 **macOS / Linux**
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Nesbesss/os3-router/main/install.sh | bash
 ```
 
 **Windows (beta: no real OS3 test yet)**
 ```powershell
-irm https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Nesbesss/os3-router/main/install.ps1 | iex
 ```
 
 The installer:
-1. checks Python 3.9+, installs the Codex CLI if needed, and runs `codex login`
+1. checks Python 3.9+, installs the Codex CLI if needed, and runs `codex login`; if Claude Code is installed, it is detected too
 2. checks that the rabbit-agent (OS3 node) is on this machine
 3. installs the router as a service (launchd / systemd / Task Scheduler) that starts at login and restarts on crashes
 4. installs the menu bar app (macOS) or tray icon (Windows)
@@ -55,7 +59,8 @@ for cloud providers:
 | **Standard** | workers that carry out tasks (shell, files, computer use) | `gpt-6-sol` · medium |
 | **Background** | memory, fact extraction and reply review (frequent, light) | `gpt-6-luna` · low |
 
-The list comes from your Codex account, so new models show up by themselves. The dashboard shows token use per role.
+The Codex list comes from your Codex account, so new models show up by themselves; Claude models appear
+when Claude Code is installed. The dashboard shows token use per role.
 
 **Several nodes?** Install the router on **one** machine, ideally the one that is always on, and
 pick it as the LLM device. Tasks still run on every node. No Tailscale, ngrok, or open ports are needed,
@@ -128,22 +133,46 @@ In OS3 itself, the model id you enter (e.g. `gpt-6-luna`) only matters when per-
 off in the dashboard; then that one model is used for everything. Append an effort to it if you like,
 e.g. `gpt-6-sol-high`.
 
-The logo is an original mark (a terminal prompt whose cursor branches into two routes); codex-os3 is not
-affiliated with or endorsed by OpenAI or rabbit.
+| `claude-sonnet-5` | Claude Code · balanced | **Standard** (workers) |
+| `claude-opus-5-5` / `claude-fable-5-1` | Claude Code · most capable | hard worker tasks; uses the most of your limit |
+| `claude-haiku-4-5` | Claude Code · fastest | **Background** |
+
+The logo is an original mark (a terminal prompt whose cursor branches into two routes); os3-router is not
+affiliated with or endorsed by OpenAI, Anthropic or rabbit.
+
+## Claude Code
+
+Pick a Claude model for any role in Settings → Models. The router then runs the official `claude` CLI
+(`claude -p`), unmodified, the way it runs `codex exec`: Claude Code's own tools, MCP servers, hooks and
+settings are switched off for these calls, OS3's tools are passed as a schema, screenshots go in as images,
+and each task keeps one Claude Code session. The dashboard shows your Claude 5-hour and weekly limits next to
+Codex's.
+
+Setup: install Claude Code on the same machine and sign in **in Claude Code itself** (`claude`, then
+`/login`). The router never asks for, reads or stores your login; it only starts the `claude` binary.
+
+On the terms: Anthropic's [Claude Code legal page](https://code.claude.com/docs/en/legal-and-compliance)
+allows an end user to sign in to the unmodified Claude Code binary with their own subscription, including
+where another product runs Claude Code, and Anthropic's support assistant said this setup is allowed
+(an AI chatbot, not a binding ruling). It also says
+subscription limits assume ordinary, individual use and that Anthropic may enforce its restrictions without
+notice. OS3 workers doing a lot of computer use are heavy use: keep an eye on the limits and decide for yourself.
+The router does not load your `~/.claude/settings.json`; it uses the login you made in Claude Code. Only an
+`ANTHROPIC_API_KEY` in the service's environment would switch it to per-token API billing.
 
 ## Troubleshooting
 
 | you see | cause and fix |
 |---|---|
-| OS3: *"The device is offline or the local endpoint is unreachable"* when saving | the router must run on the **device you selected** in OS3, and the endpoint must be `http://localhost:11435/v1`. Check `codex-os3 doctor` on that machine. |
-| OS3: *"This model did not make a tool call"* when saving | make sure the **API key** field holds the router's key and `codex-os3 doctor` is all ✓ (an outdated Codex CLI is the usual cause), then save again; the check is a live model call, so an occasional retry is normal |
+| OS3: *"The device is offline or the local endpoint is unreachable"* when saving | the router must run on the **device you selected** in OS3, and the endpoint must be `http://localhost:11435/v1`. Check `os3-router doctor` on that machine. |
+| OS3: *"This model did not make a tool call"* when saving | make sure the **API key** field holds the router's key and `os3-router doctor` is all ✓ (an outdated Codex CLI is the usual cause), then save again; the check is a live model call, so an occasional retry is normal |
 | OS3: *"Local LLM device can't be reached"* during tasks | the rabbit-agent's tunnel died; the watchdog restarts the agent automatically within ~2 min, or use *Restart rabbit-agent* in the dashboard / menu bar |
-| *"Codex usage limit reached — resets at …"* | your ChatGPT plan's 5-hour or weekly limit; the dashboard shows both. Use lighter models/effort per role to stretch it |
+| *"Codex / Claude usage limit reached — resets at …"* | your plan's 5-hour or weekly limit; the dashboard shows both per subscription. Use lighter models/effort per role, or move a role to the other subscription |
 | installer says *run this in Terminal on the Mac itself* | macOS services started over SSH lose their permissions; run it locally |
 | dashboard shows *Codex CLI version* ✗ | `npm i -g @openai/codex@latest` (older CLIs reject the current models) |
-| something else | open an issue with `codex-os3 doctor` output and a log export (dashboard → Tasks & export) |
+| something else | open an issue with `os3-router doctor` output and a log export (dashboard → Tasks & export) |
 
-`codex-os3 doctor`: `cd ~/.codex-os3/app && python3 -m codex_os3 doctor`
+`os3-router doctor`: `cd ~/.codex-os3/app && python3 -m codex_os3 doctor` (the internal names kept the old name)
 
 ## Privacy and security
 

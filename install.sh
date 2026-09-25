@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# codex-os3 installer (macOS + Linux)
-#   curl -fsSL https://raw.githubusercontent.com/Nesbesss/codex-os3/main/install.sh | bash
+# os3-router installer (macOS + Linux)
+#   curl -fsSL https://raw.githubusercontent.com/Nesbesss/os3-router/main/install.sh | bash
 # Options: --uninstall [--purge]   --no-app   --no-wait   --port N
 # Env:     CODEX_OS3_SRC=<local checkout>  (install from a folder instead of GitHub)
 #          CODEX_OS3_REF=<branch|tag>       (default: main)
 set -euo pipefail
 
-REPO="Nesbesss/codex-os3"
+REPO="Nesbesss/os3-router"
 REF="${CODEX_OS3_REF:-main}"
 HOME_DIR="${CODEX_OS3_HOME:-$HOME/.codex-os3}"
 APP_DIR="$HOME_DIR/app"
@@ -33,14 +33,14 @@ UNIT="$HOME/.config/systemd/user/codex-os3.service"
 
 # --------------------------------------------------------------------------- uninstall
 if [ "$UNINSTALL" = 1 ]; then
-  b "Uninstalling codex-os3"
+  b "Uninstalling os3-router"
   if [ "$OS" = Darwin ]; then
     launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
     rm -f "$PLIST"
     for i in $(seq 1 30); do pgrep -f -- "-m codex_os3 (serve|worker)" >/dev/null || break; sleep 1; done
     pkill -9 -f -- "-m codex_os3 (serve|worker)" 2>/dev/null || true
-    pkill -f "Codex OS3.app/Contents/MacOS/CodexOS3" 2>/dev/null || true
-    rm -rf "$HOME/Applications/Codex OS3.app"
+    pkill -f "Contents/MacOS/CodexOS3" 2>/dev/null || true
+    rm -rf "$HOME/Applications/OS3 Router.app" "$HOME/Applications/Codex OS3.app"
   else
     systemctl --user disable --now codex-os3 2>/dev/null || true
     rm -f "$UNIT"; systemctl --user daemon-reload 2>/dev/null || true
@@ -52,7 +52,7 @@ if [ "$UNINSTALL" = 1 ]; then
   ok "done"; exit 0
 fi
 
-b "codex-os3 installer"
+b "os3-router installer"
 case "$OS" in Darwin|Linux) ;; *) die "use install.ps1 on Windows" ;; esac
 
 # launchd services started from an SSH session land outside the GUI session: they can't be
@@ -109,7 +109,7 @@ else
 fi
 
 # --------------------------------------------------------------------------- code
-b "Installing codex-os3"
+b "Installing os3-router"
 mkdir -p "$HOME_DIR"
 NEW="$HOME_DIR/app.new"; rm -rf "$NEW"; mkdir -p "$NEW"
 if [ -n "${CODEX_OS3_SRC:-}" ]; then
@@ -124,11 +124,13 @@ fi
 [ -f "$NEW/codex_os3/__init__.py" ] || die "download looks incomplete"
 rm -rf "$APP_DIR.old"; [ -d "$APP_DIR" ] && mv "$APP_DIR" "$APP_DIR.old"; mv "$NEW" "$APP_DIR"; rm -rf "$APP_DIR.old"
 VERSION="$("$PY" -c "import sys; sys.path.insert(0, '$APP_DIR'); import codex_os3; print(codex_os3.__version__)")"
-ok "codex-os3 $VERSION in $APP_DIR"
+ok "os3-router $VERSION in $APP_DIR"
 
 cd "$APP_DIR"
 [ -n "$PORT" ] && "$PY" -c "from codex_os3 import config; config.save({'port': int('$PORT')})"
 "$PY" -c "from codex_os3 import config; config.save({'codex_bin': '$CODEX'}); config.ensure_key()"
+CLAUDE=$(command -v claude || true)  # optional: lets roles use Claude models via Claude Code
+[ -n "$CLAUDE" ] && "$PY" -c "from codex_os3 import config; config.save({'claude_bin': '$CLAUDE'})" && ok "Claude Code found: $CLAUDE"
 PORT="$("$PY" -c "from codex_os3 import config; print(config.load()['port'])")"
 SVC_PATH="$(dirname "$CODEX"):$(dirname "$(command -v node 2>/dev/null || echo /usr/bin/node)"):/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
@@ -164,7 +166,7 @@ else
     mkdir -p "$(dirname "$UNIT")"
     cat > "$UNIT" <<UNIT
 [Unit]
-Description=codex-os3 router (Codex subscription as the LLM for rabbit OS3)
+Description=os3-router (Codex / Claude Code subscription as the LLM for rabbit OS3)
 After=network-online.target
 
 [Service]
@@ -213,14 +215,17 @@ done || true
 # --------------------------------------------------------------------------- macOS app
 if [ "$OS" = Darwin ] && [ "$NO_APP" = 0 ]; then
   ZIP="$HOME_DIR/app.zip"; rm -f "$ZIP"
-  if [ -d "$APP_DIR/app/macos/build/Codex OS3.app" ]; then ditto -c -k --keepParent "$APP_DIR/app/macos/build/Codex OS3.app" "$ZIP"
-  elif curl -fsSL "https://github.com/$REPO/releases/latest/download/CodexOS3-macos.zip" -o "$ZIP" 2>/dev/null; then :
-  elif command -v gh >/dev/null 2>&1 && gh release download -R "$REPO" -p CodexOS3-macos.zip -O "$ZIP" 2>/dev/null; then :
-  fi
+  if [ -d "$APP_DIR/app/macos/build/OS3 Router.app" ]; then ditto -c -k --keepParent "$APP_DIR/app/macos/build/OS3 Router.app" "$ZIP"
+  else for Z in OS3Router-macos.zip CodexOS3-macos.zip; do  # the latter: releases before 0.2.0
+    curl -fsSL "https://github.com/$REPO/releases/latest/download/$Z" -o "$ZIP" 2>/dev/null && break
+    command -v gh >/dev/null 2>&1 && gh release download -R "$REPO" -p "$Z" -O "$ZIP" 2>/dev/null && break
+  done; fi
   if [ -s "$ZIP" ]; then
-    mkdir -p "$HOME/Applications"; pkill -f "Codex OS3.app/Contents/MacOS/CodexOS3" 2>/dev/null || true
-    rm -rf "$HOME/Applications/Codex OS3.app"; ditto -x -k "$ZIP" "$HOME/Applications/" && rm -f "$ZIP"
-    open "$HOME/Applications/Codex OS3.app" && ok "menu bar app: ~/Applications/Codex OS3.app"
+    mkdir -p "$HOME/Applications"; pkill -f "Contents/MacOS/CodexOS3" 2>/dev/null || true
+    rm -rf "$HOME/Applications/OS3 Router.app" "$HOME/Applications/Codex OS3.app"  # the latter: name before 0.2.0
+    ditto -x -k "$ZIP" "$HOME/Applications/" && rm -f "$ZIP"
+    A="$HOME/Applications/OS3 Router.app"; [ -d "$A" ] || A="$HOME/Applications/Codex OS3.app"
+    open "$A" && ok "menu bar app: $A"
   else
     warn "menu bar app not available for this version (the router works without it)"
   fi

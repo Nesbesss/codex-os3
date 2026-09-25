@@ -1,5 +1,5 @@
 """JSON API behind the web UI. handle() -> (status, body, content_type)."""
-import os, re, shutil, subprocess, time
+import json, os, re, shutil, subprocess, time
 
 from . import __version__, config, export, os3, roles, store
 from .platform_util import pid_alive
@@ -51,11 +51,38 @@ def codex_info():
     return info
 
 
+def claude_info(cfg):
+    b = cfg.get("claude_bin") or shutil.which("claude")
+    info = {"path": b, "logged_in": None, "detail": ""}
+    if not b:
+        return info
+    try:
+        s = subprocess.run([b, "auth", "status"], capture_output=True, text=True, timeout=20)
+        d = json.loads(s.stdout or "{}")
+        info["logged_in"] = bool(d.get("loggedIn"))
+        info["detail"] = d.get("authMethod") or ""
+    except (OSError, subprocess.SubprocessError, ValueError):
+        pass
+    return info
+
+
+def uses_claude(cfg):
+    models = [r.get("model") for r in (cfg.get("roles") or {}).values()] if cfg.get("role_routing", True) else []
+    return any(roles.backend(m) == "claude" for m in models + [cfg["model"]])
+
+
 def doctor(cfg):
     c = codex_info()
     a = os3.status()
     first = store.q("SELECT MIN(ts) t, MAX(ts) l, COUNT(*) n FROM requests")[0]
-    return [
+    extra = []
+    if uses_claude(cfg):
+        k = claude_info(cfg)
+        extra = [{"check": "Claude Code installed", "ok": bool(k["path"]),
+                  "detail": k["path"] or "see https://code.claude.com (a role uses a Claude model)"},
+                 {"check": "Claude Code logged in (your own account)", "ok": bool(k["logged_in"]),
+                  "detail": k["detail"] or "run: claude, then /login"}]
+    return extra + [
         {"check": "Codex CLI installed", "ok": bool(c["path"]), "detail": c["path"] or "npm i -g @openai/codex"},
         {"check": f"Codex CLI version ≥ {MIN_CODEX}", "ok": _ver(c["version"]) >= _ver(MIN_CODEX),
          "detail": (c["version"] or "?") + ("" if _ver(c["version"]) >= _ver(MIN_CODEX)
@@ -88,10 +115,11 @@ def usage(hours):
 
 def handle(method, path, data, q, cfg):
     if method == "GET" and path == "status":
-        lim = store.q("SELECT * FROM limits ORDER BY ts DESC LIMIT 1")
+        lims = store.latest_limits()
         wd = store.kv_get("watchdog_last") or {}
         running = store.q("SELECT COUNT(*) n FROM requests WHERE status='running' AND ts > ?", (time.time() - 900,))[0]["n"]
-        return 200, {"version": __version__, "time": time.time(), "limits": lim[0] if lim else None,
+        return 200, {"version": __version__, "time": time.time(), "limits": lims.get("codex") or next(iter(lims.values()), None),
+                     "limits_all": lims,
                      "usage_limit": store.kv_get("usage_limit"), "agent": os3.status(),
                      "watchdog": wd, "running": running, "model": cfg["model"],
                      "endpoint": f"http://localhost:{cfg['port']}/v1"}, J

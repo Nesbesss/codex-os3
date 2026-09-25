@@ -1,6 +1,6 @@
 # Security
 
-## What codex-os3 can reach
+## What os3-router can reach
 - **Your Codex/ChatGPT subscription.** Anyone who can call the router can spend your quota. The `/v1` API
   always requires the API key; by default the router only listens on `127.0.0.1`.
 - **Your screen and files, indirectly.** OS3 decides what runs on your devices; the router only turns
