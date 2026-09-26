@@ -13,7 +13,9 @@ jobs:
           test "v$(python3 -c 'import codex_os3; print(codex_os3.__version__)')" = "$GITHUB_REF_NAME"
           app/macos/build.sh
           ditto -c -k --keepParent "app/macos/build/OS3 Router.app" OS3Router-macos.zip
+          mkdir dmg && cp -R "app/macos/build/OS3 Router.app" dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname "OS3 Router" -srcfolder dmg -ov -format UDZO OS3Router.dmg
       - env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --generate-notes
-          gh release upload "$GITHUB_REF_NAME" OS3Router-macos.zip --clobber
+          gh release upload "$GITHUB_REF_NAME" OS3Router-macos.zip OS3Router.dmg --clobber

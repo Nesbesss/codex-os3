@@ -278,7 +278,13 @@ if [ "$OS" = Darwin ] && [ "$NO_APP" = 0 ]; then
     rm -rf "$HOME/Applications/OS3 Router.app" "$HOME/Applications/Codex OS3.app"  # the latter: name before 0.2.0
     ditto -x -k "$ZIP" "$HOME/Applications/" && rm -f "$ZIP"
     A="$HOME/Applications/OS3 Router.app"; [ -d "$A" ] || A="$HOME/Applications/Codex OS3.app"
-    open "$A" && ok "menu bar app: $A"
+    # the app isn't signed by an Apple developer account: mark it downloaded so macOS offers "Open Anyway"
+    # (without the mark it refuses silently)
+    xattr -w com.apple.quarantine "0083;$(printf %x "$(date +%s)");os3-router;" "$A" 2>/dev/null || true
+    open "$A" || true
+    ok "app installed: $A"
+    warn "macOS will say \"OS3 Router\" Not Opened the first time. Click Done, then open"
+    warn "System Settings → Privacy & Security, scroll down, and click Open Anyway. Only once."
   else
     warn "menu bar app not available for this version (the router works without it)"
   fi

@@ -103,11 +103,11 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(302, b"", "text/plain", [
                 ("Location", "/"),
                 ("Set-Cookie", f"cxos3={cfg['api_key']}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000")])
-        if path in ("", "/ui", "/index.html"):
+        if path in ("", "/ui", "/index.html", "/app"):
             if not self.ui_ok(cfg):
                 return self.send(401, b"unauthorized: open this page on the router's machine, "
                                  b"or log in once with /login?key=<api key>", "text/plain")
-            with open(os.path.join(UI_DIR, "index.html"), "rb") as f:
+            with open(os.path.join(UI_DIR, "app.html" if path == "/app" else "index.html"), "rb") as f:
                 return self.send(200, f.read(), "text/html; charset=utf-8")
         if path.startswith("/api/"):
             return self.api("GET", path, cfg)

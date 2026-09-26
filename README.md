@@ -36,7 +36,7 @@ The installer:
 1. checks Python 3.9+, installs the Codex CLI if needed, and runs `codex login`; if Claude Code is installed, it is detected too
 2. checks that the rabbit-agent (OS3 node) is on this machine
 3. installs the router as a service (launchd / systemd / Task Scheduler) that starts at login and restarts on crashes
-4. installs the menu bar app (macOS) or tray icon (Windows)
+4. installs the **OS3 Router app** (macOS) or tray icon (Windows)
 5. opens the setup page and **waits until OS3 connects**
 
 Then open the dashboard (`http://localhost:11435`): the **setup wizard** walks you through OS3 step by step
@@ -102,6 +102,18 @@ Codex is an agent CLI, not a chat API, so the router does a lot of translation:
 - **Zero-downtime updates:** upgrades swap the worker process while running requests finish
 - **Automatic updates:** every 30 min it checks for a new release, runs that release's tests on your machine,
   and only then switches over (keeps the previous version; off in Settings)
+
+## The OS3 Router app (macOS)
+
+A small app with your status, limits, models (with an effort slider), the setup wizard, help and problem
+reports. It lives in the menu bar and opens a window from Launchpad/Finder. The installer adds it; you can also
+download **OS3Router.dmg** from the [latest release](https://github.com/Nesbesss/os3-router/releases/latest) and drag
+it to Applications. It's the router's own page (`http://localhost:11435/app`) in a native window, so it updates
+together with the router.
+
+**First open:** the app isn't signed with a paid Apple developer account, so macOS says *"OS3 Router" Not Opened*.
+Click **Done**, open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** (then your
+password). You only do this once; router updates don't replace the app.
 
 ## Dashboard, menu bar app, watchdog
 

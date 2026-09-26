@@ -460,5 +460,29 @@ class AgentKeepaliveRuleTest(unittest.TestCase):
         self.assertEqual([f["kind"] for f in watchdog.rules(s)], [])
 
 
+class MacAppUpdateTest(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "darwin", "macOS app")
+    def test_unchanged_app_is_not_replaced(self):
+        # a new unsigned build must be approved in Privacy & Security again: only replace it when it changed
+        import plistlib
+        from codex_os3 import updater
+        home = tempfile.mkdtemp()
+        app = os.path.join(home, "Applications", "OS3 Router.app", "Contents")
+        os.makedirs(app)
+        with open(os.path.join(updater.APP, "app", "macos", "VERSION")) as f:
+            want = f.read().strip()
+        with open(os.path.join(app, "Info.plist"), "wb") as f:
+            plistlib.dump({"CFBundleShortVersionString": want}, f)
+        def no_download(*a, **k):
+            raise AssertionError("downloaded an unchanged app")
+        orig, updater._get = updater._get, no_download
+        old_home, os.environ["HOME"] = os.environ.get("HOME"), home
+        try:
+            updater.update_apps("v9.9.9")  # returns without downloading
+        finally:
+            updater._get = orig
+            os.environ["HOME"] = old_home
+
+
 if __name__ == "__main__":
     unittest.main()

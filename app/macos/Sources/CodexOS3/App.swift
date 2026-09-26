@@ -4,9 +4,11 @@
 import AppKit
 import ServiceManagement
 import SwiftUI
+import WebKit
 
 @main
 struct CodexOS3App: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = RouterModel()
 
     init() {
@@ -50,10 +52,6 @@ struct Status: Decodable {
     let running: Int; let model: String; let endpoint: String; let usage_limit: UsageLimit?
     let whats_new: Bool?
 }
-struct WhatsNew: Decodable {
-    struct Section: Decodable { let title: String; let body: String }
-    let version: String; let show: Bool; let sections: [Section]
-}
 struct Config: Decodable { let api_key: String; let port: Int; let model: String }
 
 @MainActor
@@ -69,8 +67,9 @@ final class RouterModel: ObservableObject {
                        ?? NSString(string: "~/.codex-os3").expandingTildeInPath)
     static let serviceLabel = "ai.codexos3.router"
 
-    var port: Int {
-        let url = URL(fileURLWithPath: Self.home + "/config.json")
+    var port: Int { Self.configuredPort }
+    static var configuredPort: Int {
+        let url = URL(fileURLWithPath: home + "/config.json")
         if let d = try? Data(contentsOf: url),
            let j = try? JSONSerialization.jsonObject(with: d) as? [String: Any], let p = j["port"] as? Int { return p }
         return 11435
@@ -104,7 +103,7 @@ final class RouterModel: ObservableObject {
                 let (d, _) = try await URLSession.shared.data(from: URL(string: base + "/api/status")!)
                 status = try JSONDecoder().decode(Status.self, from: d)
                 error = nil
-                if status?.whats_new == true && !showingWhatsNew { showWhatsNew() }
+                if status?.whats_new == true && !showingWhatsNew { showingWhatsNew = true; AppWindow.shared.show() }
             } catch {
                 status = nil
                 self.error = "Router not running"
@@ -164,47 +163,6 @@ final class RouterModel: ObservableObject {
 
     func reload() {
         Task { _ = try? await post("reload"); flash("Router reload requested"); refresh() }
-    }
-
-    /// After an update: the changelog since the version last seen, once (the web UI or the
-    /// Windows tray may show it instead; Continue marks it seen for all of them).
-    func showWhatsNew() {
-        showingWhatsNew = true
-        Task {
-            defer { showingWhatsNew = false }
-            guard let (d, _) = try? await URLSession.shared.data(from: URL(string: base + "/api/whatsnew")!),
-                  let w = try? JSONDecoder().decode(WhatsNew.self, from: d), w.show else { return }
-            let text = w.sections.map { $0.title + "\n" + Self.plain($0.body) }.joined(separator: "\n\n")
-            let view = NSTextView(frame: NSRect(x: 0, y: 0, width: 520, height: 320))
-            view.string = text
-            view.isEditable = false
-            view.font = .systemFont(ofSize: 13)
-            view.textContainerInset = NSSize(width: 6, height: 6)
-            let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 520, height: 320))
-            scroll.documentView = view
-            scroll.hasVerticalScroller = true
-            let alert = NSAlert()
-            alert.messageText = "What's new in os3-router \(w.version)"
-            alert.informativeText = "os3-router was updated."
-            alert.accessoryView = scroll
-            alert.addButton(withTitle: "Continue")
-            alert.addButton(withTitle: "Open dashboard")
-            NSApp.activate(ignoringOtherApps: true)
-            let r = alert.runModal()
-            _ = try? await post("whatsnew/seen")
-            if r == .alertSecondButtonReturn { openDashboard() }
-        }
-    }
-
-    /// Changelog markdown -> plain bullets
-    static func plain(_ body: String) -> String {
-        var items: [String] = []
-        for line in body.components(separatedBy: "\n") {
-            let t = line.trimmingCharacters(in: .whitespaces)
-            if t.hasPrefix("- ") { items.append("• " + t.dropFirst(2)) }
-            else if !t.isEmpty, !items.isEmpty { items[items.count - 1] += " " + t }
-        }
-        return items.joined(separator: "\n").replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "`", with: "")
     }
 
     func openDashboard(_ tab: String = "") {
@@ -301,8 +259,10 @@ struct MenuContent: View {
             if let b = model.busy { ProgressView(b).controlSize(.small) }
             if let n = model.note { Text(n).font(.caption).foregroundStyle(.secondary) }
             Divider()
+            Button("Open OS3 Router") { AppWindow.shared.show() }.keyboardShortcut("o")
+            Divider()
             Group {
-                Button("Open dashboard") { model.openDashboard() }
+                Button("Open web dashboard") { model.openDashboard() }
                 Button("Copy OS3 settings") { model.copySetup() }
                 Button("Copy API key") { model.copyKey() }
                 Button("Restart rabbit-agent") { model.restartAgent() }.disabled(model.status == nil || model.busy != nil)
@@ -331,5 +291,122 @@ struct MenuContent: View {
             Text(s.running > 0 ? "Working on \(s.running) request(s) · \(s.model)" : "Idle · \(s.model)")
                 .font(.caption).foregroundStyle(.secondary)
         }
+    }
+}
+
+
+// MARK: - App window
+
+/// Opened from Launchpad/Finder (not at login): show the app window.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ n: Notification) {
+        let atLogin = ProcessInfo.processInfo.systemUptime < 180
+        if !atLogin && !CommandLine.arguments.contains("--snapshot") { AppWindow.shared.show() }
+    }
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        AppWindow.shared.show()
+        return true
+    }
+}
+
+/// The main window: the router's own app page (/app) in a native window. The page is served
+/// by the router, so it updates together with the router.
+final class AppWindow: NSObject, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
+    static let shared = AppWindow()
+    private var window: NSWindow?
+    private var web: WKWebView?
+    private var retry: Timer?
+
+    var url: URL {
+        URL(string: "http://127.0.0.1:\(RouterModel.configuredPort)/app?native=1")!
+    }
+
+    func show() {
+        if window == nil { build() }
+        NSApp.setActivationPolicy(.regular)  // Dock icon while the window is open
+        window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func build() {
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 760),
+                         styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                         backing: .buffered, defer: false)
+        w.titlebarAppearsTransparent = true
+        w.titleVisibility = .hidden
+        w.title = "OS3 Router"
+        w.minSize = NSSize(width: 780, height: 560)
+        w.isReleasedWhenClosed = false
+        w.delegate = self
+        w.center()
+        w.setFrameAutosaveName("OS3RouterMain")
+        let v = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        v.navigationDelegate = self
+        v.uiDelegate = self
+        v.setValue(false, forKey: "drawsBackground")  // no white flash before the page paints
+        let drag = DragStrip()  // the page covers the title bar: this strip moves the window
+        let root = NSView()
+        for sub in [v, drag] as [NSView] { sub.translatesAutoresizingMaskIntoConstraints = false; root.addSubview(sub) }
+        NSLayoutConstraint.activate([
+            v.topAnchor.constraint(equalTo: root.topAnchor), v.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            v.leadingAnchor.constraint(equalTo: root.leadingAnchor), v.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            drag.topAnchor.constraint(equalTo: root.topAnchor), drag.heightAnchor.constraint(equalToConstant: 34),
+            drag.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 80), drag.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+        ])
+        w.contentView = root
+        window = w
+        web = v
+        load()
+    }
+
+    func load() { web?.load(URLRequest(url: url)) }
+
+    func windowWillClose(_ n: Notification) { NSApp.setActivationPolicy(.accessory) }
+
+    // router not answering (stopped, restarting): a calm page, then try again
+    func webView(_ w: WKWebView, didFailProvisionalNavigation n: WKNavigation!, withError e: Error) {
+        w.loadHTMLString("""
+        <html><body style="font:15px -apple-system;display:grid;place-items:center;height:92vh;margin:0;color:#8a8a92;background:transparent">
+        <div style="text-align:center"><div style="font-size:22px;font-weight:700;color:#999">Starting the router…</div>
+        <p>If this stays, use the menu bar icon → Start router service.</p></div></body></html>
+        """, baseURL: nil)
+        retry?.invalidate()
+        retry = Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { [weak self] _ in self?.load() }
+    }
+
+    // only the router's own app page loads in this window; anything else (web dashboard, GitHub)
+    // opens in the normal browser, so no other page can ever pose as the app
+    func webView(_ w: WKWebView, decidePolicyFor a: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let u = a.request.url else { return decisionHandler(.cancel) }
+        let ours = u.host == "127.0.0.1" && u.port == RouterModel.configuredPort && (u.path.hasPrefix("/app") || u.path.hasPrefix("/api/") || u.path.hasPrefix("/guide/"))
+        if ours || u.scheme == "about" { return decisionHandler(.allow) }
+        if ["http", "https"].contains(u.scheme ?? "") && a.navigationType == .linkActivated { NSWorkspace.shared.open(u) }
+        decisionHandler(.cancel)
+    }
+
+    func webView(_ w: WKWebView, createWebViewWith c: WKWebViewConfiguration, for a: WKNavigationAction, windowFeatures f: WKWindowFeatures) -> WKWebView? {
+        if let u = a.request.url { NSWorkspace.shared.open(u) }
+        return nil
+    }
+
+    func webView(_ w: WKWebView, runJavaScriptConfirmPanelWithMessage m: String, initiatedByFrame f: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
+        let a = NSAlert()
+        a.messageText = m
+        a.addButton(withTitle: "OK")
+        a.addButton(withTitle: "Cancel")
+        completionHandler(a.runModal() == .alertFirstButtonReturn)
+    }
+
+    func webView(_ w: WKWebView, runJavaScriptAlertPanelWithMessage m: String, initiatedByFrame f: WKFrameInfo, completionHandler: @escaping () -> Void) {
+        let a = NSAlert()
+        a.messageText = m
+        a.runModal()
+        completionHandler()
+    }
+}
+
+final class DragStrip: NSView {
+    override func mouseDown(with e: NSEvent) {
+        if e.clickCount == 2 { window?.performZoom(nil) } else { window?.performDrag(with: e) }
     }
 }

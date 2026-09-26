@@ -2,7 +2,7 @@
 release; a newer one is downloaded, its own offline test suite must pass, then its files are
 copied over the install (previous version kept in app.prev) and the service reloads without
 downtime. Only for installs made by the installer (~/.codex-os3/app); off with auto_update=false."""
-import io, json, os, shutil, subprocess, sys, tarfile, tempfile, time, urllib.request
+import io, json, os, plistlib, shutil, subprocess, sys, tarfile, tempfile, time, urllib.request
 
 from . import __version__, config, store
 
@@ -66,6 +66,15 @@ def update_apps(tag):
         old = [os.path.join(apps, n) for n in ("OS3 Router.app", "Codex OS3.app") if os.path.isdir(os.path.join(apps, n))]
         if not old:
             return  # installed with --no-app
+        try:  # unchanged app: keep it (a new unsigned build has to be approved in Privacy & Security again)
+            with open(os.path.join(APP, "app", "macos", "VERSION")) as f:
+                want = f.read().strip()
+            with open(os.path.join(old[0], "Contents", "Info.plist"), "rb") as f:
+                have = plistlib.load(f).get("CFBundleShortVersionString")
+            if have == want and old[0].endswith("OS3 Router.app"):
+                return
+        except (OSError, ValueError):
+            pass
         tmp = tempfile.mkdtemp(prefix="os3-router-app-")
         try:
             z = os.path.join(tmp, "app.zip")
@@ -78,8 +87,14 @@ def update_apps(tag):
             subprocess.run(["pkill", "-f", "Contents/MacOS/CodexOS3"], timeout=10)
             for a in old:
                 shutil.rmtree(a, ignore_errors=True)
-            shutil.move(new, os.path.join(apps, "OS3 Router.app"))
-            subprocess.run(["open", os.path.join(apps, "OS3 Router.app")], timeout=30)
+            dest = os.path.join(apps, "OS3 Router.app")
+            shutil.move(new, dest)
+            # mark it downloaded, so macOS offers "Open Anyway" instead of silently refusing to start it
+            subprocess.run(["xattr", "-w", "com.apple.quarantine", f"0083;{int(time.time()):x};os3-router;", dest], timeout=10)
+            subprocess.run(["open", dest], timeout=30)
+            from .notify import desktop
+            desktop("The OS3 Router app was updated. If macOS blocks it: System Settings → Privacy & Security → Open Anyway.",
+                    key="app-updated")
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
     elif sys.platform == "win32":

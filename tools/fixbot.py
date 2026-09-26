@@ -10,12 +10,26 @@ Same token and channel as reports_to_issues.py.
   fixbot.py check                     prints YES/NO/WAITING <pr> <issue> for every open card
   fixbot.py say "text"                post a message (e.g. "released v0.3.2")
 """
-import argparse, json, os, sys, urllib.parse, urllib.request
+import argparse, json, os, subprocess, sys, urllib.parse, urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from reports_to_issues import CHANNEL, DIR, token  # noqa: E402
 
 PENDING = os.path.join(DIR, "pending_fixes.json")
+# files where a bad change hurts every install (updates, installers, CI, auth, reports): flagged on the card
+SENSITIVE = ("install.sh", "install.ps1", ".github/", "codex_os3/updater.py", "codex_os3/report.py",
+             "codex_os3/server.py", "codex_os3/config.py", "codex_os3/selffix.py", "report-intake/", "tools/", "app/")
+
+
+def pr_files(pr):
+    """[(path, additions, deletions)] via gh; [] if gh can't tell."""
+    try:
+        out = subprocess.run(["gh", "pr", "view", pr, "--json", "files"], capture_output=True, text=True, timeout=60)
+        return [(f["path"], f.get("additions", 0), f.get("deletions", 0)) for f in json.loads(out.stdout)["files"]]
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        return []
+
+
 YES, NO = "✅", "❌"
 
 
@@ -50,23 +64,30 @@ def save(p):
 
 
 def card(a, state=None):
-    colors = {None: 0x2a78d6, "yes": 0x0ca30c, "no": 0xd03b3b}
+    files = a.get("files") or []
+    risky = [f for f, _, _ in files if f.startswith(SENSITIVE) or f in SENSITIVE]
+    colors = {None: 0xe8a33d if risky else 0x2a78d6, "yes": 0x0ca30c, "no": 0xd03b3b}
     foot = {None: f"React {YES} to merge and release · {NO} to reject",
             "yes": f"{YES} Approved: merging and releasing", "no": f"{NO} Rejected"}[state]
     return {"embeds": [{
         "title": f"Fix ready for #{a['issue']}: {a['title']}"[:250], "url": a["pr"], "color": colors[state],
         "description": a["summary"][:3500],
         "fields": [{"name": "Issue", "value": f"[#{a['issue']}](https://github.com/Nesbesss/os3-router/issues/{a['issue']})", "inline": True},
-                   {"name": "Pull request", "value": f"[open]({a['pr']})", "inline": True}],
+                   {"name": "Pull request", "value": f"[open]({a['pr']})", "inline": True}]
+                  + ([{"name": f"Changes · +{sum(x[1] for x in files)} −{sum(x[2] for x in files)} in {len(files)} file(s)",
+                       "value": "\n".join(f"`{f}` +{ad} −{de}" for f, ad, de in files[:12])[:1000]}] if files else [])
+                  + ([{"name": "⚠️ Touches sensitive files: review the diff before approving",
+                       "value": ", ".join(f"`{f}`" for f in risky)[:1000]}] if risky else []),
         "footer": {"text": foot}}], "allowed_mentions": {"parse": []}}
 
 
 def ask(a):
+    a["files"] = pr_files(a["pr"])
     m = api("POST", f"/channels/{CHANNEL}/messages", card(a))
     for e in (YES, NO):
         api("PUT", f"/channels/{CHANNEL}/messages/{m['id']}/reactions/{urllib.parse.quote(e)}/@me")
     p = load()
-    p[m["id"]] = {"issue": a["issue"], "pr": a["pr"], "title": a["title"], "summary": a["summary"]}
+    p[m["id"]] = {k: a[k] for k in ("issue", "pr", "title", "summary", "files")}
     save(p)
     print(f"ASKED {a['pr']} (message {m['id']})")
 

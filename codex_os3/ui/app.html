@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OS3 Router</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f4f6; --side: #eaeaee; --card: #ffffff; --ink: #1c1c1f; --ink-2: #4e4e55; --ink-3: #8a8a92;
+  --line: #e4e4e9; --soft: #f1f1f4; --accent: #3d63f0; --accent-soft: #e6ebfd;
+  --good: #1e9a55; --good-soft: #e3f5ea; --warn: #c98100; --warn-soft: #fbf0d9; --bad: #d63a3a; --bad-soft: #fbe5e5;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark;
+    --bg: #1b1b1e; --side: #232327; --card: #2a2a2f; --ink: #f2f2f5; --ink-2: #c4c4cc; --ink-3: #8c8c96;
+    --line: #37373d; --soft: #323238; --accent: #6f8cff; --accent-soft: #2c3350;
+    --good: #3cc47a; --good-soft: #1f3a2b; --warn: #e6a53a; --warn-soft: #3d3220; --bad: #f06a6a; --bad-soft: #402526;
+    --shadow: 0 1px 2px rgba(0,0,0,.3); }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; display: flex; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+
+/* sidebar */
+.side { width: 212px; flex: none; background: var(--side); padding: 18px 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; padding: 4px 10px 18px; }
+.brand svg { width: 28px; height: 28px; border-radius: 7px; }
+.nav { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 10px; border: 0; background: none;
+  color: var(--ink-2); cursor: pointer; text-align: left; width: 100%; font-size: 14.5px; }
+.nav svg { width: 19px; height: 19px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nav:hover { background: var(--soft); }
+.nav[aria-current="page"] { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+.nav .badge { margin-left: auto; min-width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.grow { flex: 1; }
+.side-foot { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; font-size: 12.5px; color: var(--ink-3); border-top: 1px solid var(--line); margin-top: 8px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.dot.good { background: var(--good); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+
+/* main */
+main { flex: 1; overflow-y: auto; padding: 30px 36px 48px; }
+.wrap { max-width: 880px; margin: 0 auto; }
+h1 { font-size: 26px; margin: 0 0 4px; font-weight: 700; letter-spacing: -.01em; }
+.sub { color: var(--ink-3); margin: 0 0 22px; }
+h2 { font-size: 13px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; margin: 0 0 12px; }
+.card { background: var(--card); border-radius: 16px; padding: 20px 22px; box-shadow: var(--shadow); }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 16px; }
+.muted { color: var(--ink-3); font-size: 13.5px; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn { border: 0; border-radius: 10px; padding: 9px 16px; background: var(--soft); cursor: pointer; font-weight: 550; font-size: 14px; }
+.btn:hover { filter: brightness(.97); } .btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.big { padding: 12px 22px; font-size: 15px; border-radius: 12px; }
+a.link { color: var(--accent); cursor: pointer; text-decoration: none; font-weight: 550; font-size: 14px; }
+
+/* hero */
+.hero { display: flex; gap: 20px; align-items: center; padding: 26px; border-radius: 20px; }
+.hero .ic { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.hero .ic svg { width: 32px; height: 32px; stroke: #fff; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.hero.good { background: var(--good-soft); } .hero.good .ic { background: var(--good); }
+.hero.warn { background: var(--warn-soft); } .hero.warn .ic { background: var(--warn); }
+.hero.bad { background: var(--bad-soft); } .hero.bad .ic { background: var(--bad); }
+.hero h1 { font-size: 24px; } .hero p { margin: 2px 0 0; color: var(--ink-2); }
+.hero .grow { min-width: 0; }
+
+/* rings */
+.rings { display: flex; gap: 22px; justify-content: space-around; }
+.ring { text-align: center; }
+.ring svg { width: 104px; height: 104px; display: block; margin: 0 auto 6px; }
+.ring .pct { font-size: 22px; font-weight: 700; fill: var(--ink); }
+.ring .lbl { font-weight: 600; font-size: 14px; } .ring .rs { font-size: 12.5px; color: var(--ink-3); }
+
+.bignum { font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
+.list { margin: 0; padding: 0; list-style: none; }
+.list li { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; border-top: 1px solid var(--line); }
+.list li:first-child { border-top: 0; padding-top: 2px; }
+.list .t { flex: 1; min-width: 0; } .list .t b { font-weight: 600; }
+.list .when { color: var(--ink-3); font-size: 13px; white-space: nowrap; }
+.mrow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.mrow:first-of-type { border-top: 0; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: var(--soft); color: var(--ink-2); }
+.chip.chat { background: var(--accent-soft); color: var(--accent); } .chip.worker { background: #efe6fd; color: #7a4bd6; }
+@media (prefers-color-scheme: dark) { .chip.worker { background: #36294f; color: #c3a6ff; } }
+
+/* models */
+.role { margin-top: 16px; }
+.role h3 { margin: 0; font-size: 17px; } .role .what { color: var(--ink-3); margin: 2px 0 14px; font-size: 14px; }
+.field { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin-top: 12px; }
+.field > span { color: var(--ink-2); font-size: 14px; }
+select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--soft); }
+.seg { display: inline-flex; background: var(--soft); border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: 0; background: none; padding: 6px 13px; border-radius: 8px; cursor: pointer; color: var(--ink-2); font-size: 13.5px; }
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+.note { font-size: 13px; color: var(--ink-3); margin-top: 6px; }
+
+/* switches */
+.sw { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.sw:first-of-type { border-top: 0; }
+.sw input { appearance: none; width: 42px; height: 24px; border-radius: 99px; background: var(--line); position: relative; flex: none; cursor: pointer; margin: 2px 0 0; transition: background .15s; }
+.sw input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.sw input:checked { background: var(--good); } .sw input:checked::after { left: 21px; }
+.sw b { font-weight: 600; display: block; }
+
+/* wizard */
+.wiz { max-width: 720px; margin: 0 auto; }
+.bar { height: 6px; background: var(--line); border-radius: 6px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width .3s; }
+.stepno { font-size: 13px; color: var(--ink-3); margin: 8px 0 18px; }
+.wiz h1 { font-size: 28px; margin-bottom: 10px; }
+.lead { font-size: 16px; color: var(--ink-2); line-height: 1.6; margin: 0 0 16px; }
+.shots { display: flex; gap: 14px; justify-content: center; margin: 8px 0; }
+.shots figure { margin: 0; flex: 1; min-width: 0; text-align: center; }
+.shots img { max-width: 100%; max-height: 380px; border-radius: 12px; border: 1px solid var(--line); cursor: zoom-in; }
+.shots figcaption { font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+.copy { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--soft); border-radius: 12px; padding: 6px 6px 6px 14px; cursor: pointer; max-width: 100%; }
+.copy code { font: 14.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; }
+.copy span { background: var(--accent); color: #fff; border-radius: 8px; padding: 4px 12px; font-size: 13px; font-weight: 600; }
+.wnav { display: flex; align-items: center; gap: 12px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+.checks { list-style: none; padding: 0; margin: 0; }
+.checks li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--soft); margin-top: 8px; }
+.checks .i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 700; flex: none; background: var(--ink-3); }
+.checks [data-s="ok"] .i { background: var(--good); } .checks [data-s="error"] .i { background: var(--bad); } .checks [data-s="waiting"] .i { background: var(--accent); }
+.checks .t { flex: 1; } .checks .d { font-size: 13.5px; color: var(--ink-2); }
+.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.choice button { text-align: left; padding: 18px; border-radius: 14px; border: 2px solid var(--line); background: var(--card); cursor: pointer; }
+.choice button:hover { border-color: var(--accent); } .choice small { display: block; color: var(--ink-3); margin-top: 4px; }
+.alert { border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+.alert.bad { background: var(--bad-soft); } .alert.good { background: var(--good-soft); } .alert.warn { background: var(--warn-soft); }
+textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); resize: vertical; }
+
+#toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+#toast.on { opacity: 1; }
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: grid; place-items: center; padding: 24px; cursor: zoom-out; z-index: 9; }
+#lightbox[hidden] { display: none; } #lightbox img { max-width: 100%; max-height: 100%; border-radius: 12px; }
+/* inside the desktop app: the window's buttons sit over the sidebar's top-left */
+body.native .side { padding-top: 46px; } body.native main { padding-top: 40px; }
+
+/* what's new (after an update) */
+#whatsnew { position: fixed; inset: 0; z-index: 8; background: var(--bg); overflow: auto; display: flex; justify-content: center; padding: 64px 24px; animation: rise .4s var(--ease); }
+#whatsnew[hidden] { display: none; } #whatsnew .box { max-width: 600px; width: 100%; }
+#whatsnew h1 { font-size: 32px; margin: 4px 0 18px; } #whatsnew h3 { font-size: 14px; color: var(--ink-3); margin: 24px 0 8px; font-weight: 600; }
+#whatsnew ul { padding-left: 20px; margin: 0; } #whatsnew li { margin: 8px 0; line-height: 1.55; }
+#whatsnew code { background: var(--soft); border-radius: 5px; padding: 0 5px; font-size: 13px; }
+
+/* motion */
+:root { --ease: cubic-bezier(.2, .8, .2, 1); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes slidein { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+@keyframes slideback { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
+.enter > * { animation: rise .45s var(--ease) both; }
+.enter > *:nth-child(2) { animation-delay: .05s; } .enter > *:nth-child(3) { animation-delay: .1s; }
+.enter > *:nth-child(4) { animation-delay: .15s; } .enter > *:nth-child(5) { animation-delay: .2s; } .enter > *:nth-child(n+6) { animation-delay: .25s; }
+.enter .grid > * { animation: rise .45s var(--ease) both; } .enter .grid > *:nth-child(2) { animation-delay: .12s; } .enter .grid > *:nth-child(3) { animation-delay: .18s; }
+.enter .hero .ic { animation: pop .5s var(--ease) .1s both; }
+.wiz.fwd { animation: slidein .35s var(--ease) both; } .wiz.back { animation: slideback .35s var(--ease) both; }
+.ring .arc { transition: stroke-dasharray 1.1s var(--ease), stroke .3s; }
+.btn, .nav, .copy, .choice button, .seg button { transition: background .2s, transform .12s var(--ease), box-shadow .2s, color .2s, border-color .2s; }
+.btn:active, .copy:active, .choice button:active { transform: scale(.97); }
+.card { transition: box-shadow .25s; }
+.hero, .hero .ic, .dot { transition: background .4s; }
+.bar i { transition: width .45s var(--ease); }
+#toast { transform: translate(-50%, 12px); transition: opacity .25s, transform .3s var(--ease); } #toast.on { transform: translate(-50%, 0); }
+#lightbox img { animation: pop .3s var(--ease); }
+.checks li { animation: rise .35s var(--ease) both; }
+
+/* effort slider */
+.slider { max-width: 460px; }
+.slider .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.slider .val { font-weight: 650; font-size: 15px; text-transform: capitalize; }
+.slider .hint { font-size: 12.5px; color: var(--ink-3); }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 6px; margin: 10px 0 4px; cursor: pointer;
+  background: linear-gradient(90deg, var(--accent) 0 var(--p, 0%), var(--line) var(--p, 0%) 100%); transition: background .2s; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.06); transition: transform .15s var(--ease); }
+input[type=range]:active::-webkit-slider-thumb { transform: scale(1.15); }
+input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); padding: 0 2px; }
+.ticks span { cursor: pointer; transition: color .2s; } .ticks span.on { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 760px) { .side { width: 64px; } .side .lbl, .brand span, .side-foot span { display: none; } main { padding: 22px 18px; } .choice { grid-template-columns: 1fr; } .field { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<aside class="side" aria-label="Sections">
+  <div class="brand"><svg viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="220" fill="#1b2340"/><path d="M250 330 L430 512 L250 694" stroke="#fff" stroke-width="80" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M520 694 H640 Q700 694 740 630 L800 520 M640 694 Q700 694 740 758 L800 860" stroke="#6f8cff" stroke-width="64" fill="none" stroke-linecap="round"/></svg><span>OS3 Router</span></div>
+  <button class="nav" data-v="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="lbl">Home</span></button>
+  <button class="nav" data-v="models"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg><span class="lbl">Models</span></button>
+  <button class="nav" data-v="activity"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg><span class="lbl">Activity</span></button>
+  <button class="nav" data-v="setup"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h10"/></svg><span class="lbl">Setup</span><i class="badge" id="setupbadge" hidden></i></button>
+  <button class="nav" data-v="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span class="lbl">Help</span></button>
+  <div class="grow"></div>
+  <button class="nav" data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="lbl">Settings</span></button>
+  <div class="side-foot"><i class="dot" id="sdot"></i><span id="sstat">connecting…</span></div>
+</aside>
+<main id="main"><div class="wrap" id="view"></div></main>
+<div id="toast" role="status"></div>
+<div id="whatsnew" role="dialog" aria-modal="true" aria-labelledby="wnt" hidden><div class="box"><p class="muted" style="margin:0">OS3 Router was updated</p><h1 id="wnt">What's new</h1><div id="wnb"></div><button class="btn primary big" id="wnc" style="margin-top:28px">Continue</button></div></div>
+<div id="lightbox" hidden><img alt=""></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const fmtN = (n) => n == null ? "–" : n >= 1e9 ? (n / 1e9).toFixed(1) + "B" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(n);
+const ago = (t) => { if (!t) return "never"; const s = Date.now() / 1000 - t; return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " d ago"; };
+const until = (t) => { if (!t) return ""; const s = t - Date.now() / 1000; if (s <= 0) return "has reset"; const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h >= 48 ? `resets in ${Math.round(h / 24)} days` : `resets in ${h ? h + " h " : ""}${m} min`; };
+const api = async (p, o = {}) => { const r = await fetch("/api/" + p, o); if (!r.ok) throw new Error((await r.text()).slice(0, 200)); return r.json(); };
+const post = (p, b = {}) => api(p, {method: "POST", headers: {"Content-Type": "application/json", "X-Codex-OS3": "1"}, body: JSON.stringify(b)});
+const toast = (m) => { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2600); };
+const copy = (v) => {  // clipboard API first; the old way where an app window doesn't allow it
+  const old = () => { const t = document.createElement("textarea"); t.value = v; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); toast("Copied"); };
+  (navigator.clipboard ? navigator.clipboard.writeText(v).then(() => toast("Copied"), old) : old());
+};
+const ROLE = {chat: ["Small", "The chat you talk to"], worker: ["Standard", "Workers that do tasks: files, shell, computer use"], background: ["Background", "Memory and review; runs often, so keep it light"]};
+const modelOf = (m) => (m || "").replace(/-(minimal|low|medium|high|xhigh|max|ultra)$/, "");
+const effortOf = (m) => (m || "").match(/-(minimal|low|medium|high|xhigh|max|ultra)$/)?.[1] || "";
+const ICON = {check: '<path d="M6 12.5l4 4 8-9"/>', warn: '<path d="M12 7v6M12 17v.01"/>', dots: '<path d="M7 12h.01M12 12h.01M17 12h.01"/>'};
+const EV = {invalid_calls: "The model made a broken tool call (repaired)", fix_failed: "Couldn't repair a tool call", retry: "The model hung and was retried",
+  usage_limit: "Usage limit reached", error: "A request failed", tunnel_dead: "The OS3 node lost its connection (restarted)", agent_down: "The OS3 node was not running (restarted)",
+  restart_agent: "Restarted the OS3 node", limit_high: "A limit is above 90%", fallback: "Switched to the fallback model", update_failed: "An update failed",
+  codex_unstable: "Model calls were unstable", client_gone: "OS3 cancelled a request", false_unavailable: "The model wrongly said a tool was missing (retried)"};
+
+let S = {}, MODELS = [], CFG = {}, VIEW = "home", FIRST = true, DIR = "fwd";
+if (new URLSearchParams(location.search).has("native")) document.body.classList.add("native");  // inside the desktop app
+
+// ---------------------------------------------------------------- shell
+document.querySelectorAll(".nav").forEach(b => b.onclick = () => go(b.dataset.v));
+function go(v) { VIEW = v; location.hash = v; document.querySelectorAll(".nav").forEach(b => b.setAttribute("aria-current", b.dataset.v === v ? "page" : "false")); $("#main").scrollTop = 0; render(true); }
+async function load() {
+  try {
+    [S.status, S.ob] = await Promise.all([api("status"), api("onboarding")]);
+    const bad = heroState().cls;
+    $("#sdot").className = "dot " + bad; $("#sstat").textContent = {good: "All good", warn: "Needs a look", bad: "Problem"}[bad] + " · v" + S.status.version;
+    $("#setupbadge").hidden = S.ob.done;
+  } catch (e) { $("#sdot").className = "dot bad"; $("#sstat").textContent = "Router not running"; }
+}
+async function render(first) {
+  await load();
+  const v = VIEWS[VIEW] || VIEWS.home;
+  if (!first && v.static) return;  // don't redraw forms while someone is using them
+  FIRST = !!first;
+  try {
+    await v.draw(first);
+    if (first) {
+      const w = $("#view"); w.classList.remove("enter"); void w.offsetWidth; w.classList.add("enter");
+      requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".arc[data-d]").forEach(a => a.setAttribute("stroke-dasharray", a.dataset.d))));
+    }
+  } catch (e) { $("#view").innerHTML = `<div class="alert bad">Couldn't load this page: ${esc(e.message)}</div>`; }
+}
+setInterval(() => render(false), 10000);
+
+// ---------------------------------------------------------------- home
+function heroState() {
+  const st = S.status || {}, ob = S.ob || {steps: []};
+  const errs = (st.watchdog?.findings || []).filter(f => f.level === "error");
+  const ul = st.usage_limit && Date.now() / 1000 - st.usage_limit.ts < 3600;
+  const conn = ob.steps.find(x => x.id === "connection") || {};
+  if (!ob.done) { const c = ob.steps.find(x => x.id === ob.current) || {}; return {cls: "warn", icon: "dots", title: "Let's finish the setup", text: c.detail, btn: ["Continue setup", "setup"]}; }
+  if (ul) return {cls: "bad", icon: "warn", title: "Usage limit reached", text: (st.usage_limit.resets ? `Resets at ${st.usage_limit.resets}. ` : "") + "Set a fallback model so OS3 keeps working.", btn: ["Choose a fallback", "models"]};
+  if (errs.length) return {cls: "bad", icon: "warn", title: "Something needs attention", text: errs[0].msg, btn: ["Get help", "help"]};
+  if ((st.fallback_active || []).length) return {cls: "warn", icon: "warn", title: "Using the fallback model", text: "Your subscription hit its limit, so the fallback model answers until it resets.", btn: ["Models", "models"]};
+  return {cls: "good", icon: "check", title: "Everything works", text: conn.detail || ""};
+}
+function ring(pct, reset, label) {
+  const stale = reset && reset < Date.now() / 1000, p = stale || pct == null ? 0 : Math.min(100, pct);
+  const col = p >= 90 ? "var(--bad)" : p >= 70 ? "var(--warn)" : "var(--accent)", C = 2 * Math.PI * 42;
+  return `<div class="ring"><svg viewBox="0 0 104 104" role="img" aria-label="${label}: ${pct == null ? "no data" : Math.round(pct) + "% used"}"><circle cx="52" cy="52" r="42" fill="none" stroke="var(--line)" stroke-width="10"/>${p ? "" : "<!-- empty -->"}<circle class="arc" cx="52" cy="52" r="42" fill="none" stroke="${col}" stroke-opacity="${p ? 1 : 0}" stroke-width="10" stroke-linecap="round" data-d="${C * p / 100} ${C}" stroke-dasharray="${FIRST ? "0 " + C : C * p / 100 + " " + C}" transform="rotate(-90 52 52)"/><text x="52" y="59" text-anchor="middle" class="pct">${pct == null || stale ? "–" : Math.round(pct) + "%"}</text></svg><div class="lbl">${label}</div><div class="rs">${pct == null ? "no data yet" : stale ? "has reset" : until(reset)}</div></div>`;
+}
+const VIEWS = {};
+VIEWS.home = {async draw() {
+  const st = S.status, h = heroState();
+  const since = (Date.now() - new Date().setHours(0, 0, 0, 0)) / 3600000;
+  const [today, cfg, ms, ev] = await Promise.all([api("usage?hours=" + since), api("config"), MODELS.length ? MODELS : api("models"), api("events?limit=80")]);
+  MODELS = ms; CFG = cfg;
+  const nm = (s) => (ms.find(m => m.slug === s) || {name: s}).name;
+  const subs = Object.entries(st.limits_all || {});
+  const probs = ev.filter(e => (e.level === "error" || e.level === "warn") && EV[e.kind] && Date.now() / 1000 - e.ts < 86400).slice(0, 5);
+  $("#view").innerHTML = `
+    <div class="hero ${h.cls}"><div class="ic"><svg viewBox="0 0 24 24">${ICON[h.icon]}</svg></div>
+      <div class="grow"><h1>${h.title}</h1><p>${esc(h.text)}</p></div>
+      ${h.btn ? `<button class="btn primary big" data-go="${h.btn[1]}">${h.btn[0]}</button>` : ""}</div>
+    <div class="grid">
+      ${(subs.length ? subs : [["codex", {}]]).map(([b, L]) => `<div class="card"><h2>${b === "claude" ? "Claude subscription" : "ChatGPT subscription"}</h2><div class="rings">${ring(L.p_pct, L.p_reset, "5 hours")}${ring(L.s_pct, L.s_reset, "This week")}</div></div>`).join("")}
+      <div class="card"><h2>Today</h2><div class="bignum">${fmtN(today.total.i)}</div><div class="muted">tokens read · ${today.total.n} requests from OS3 · ${fmtN(today.total.o)} written</div>
+        <div style="margin-top:14px">${(today.by_role || []).filter(r => ROLE[r.role]).map(r => `<div class="mrow"><span><span class="chip ${r.role}">${ROLE[r.role][0]}</span></span><span class="muted">${fmtN(r.i)} · ${r.n} calls</span></div>`).join("")}</div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Models</h2><a class="link" data-go="models">Change</a></div>
+        ${cfg.role_routing !== false ? Object.keys(ROLE).map(r => `<div class="mrow"><span><b>${ROLE[r][0]}</b></span><span>${esc(nm((cfg.roles?.[r] || {}).model || cfg.model))}${cfg.fallback?.[r]?.model ? ` <span class="muted">→ ${esc(nm(cfg.fallback[r].model))}</span>` : ""}</span></div>`).join("") : `<div class="mrow"><b>Everything</b><span>${esc(nm(cfg.model))}</span></div>`}</div>
+      <div class="card"><h2>Problems · last 24 hours</h2>${probs.length ? `<ul class="list">${probs.map(e => `<li><i class="dot ${e.level === "error" ? "bad" : "warn"}" style="margin-top:7px"></i><div class="t">${esc(EV[e.kind])}</div><span class="when">${ago(e.ts)}</span></li>`).join("")}</ul>` : `<p style="margin:0">No problems. 🎉</p>`}</div>
+    </div>
+    <div class="row" style="margin-top:22px"><button class="btn" data-go="help" data-focus="report">Report a problem</button><button class="btn" id="hometest">Test my setup</button><span class="muted" id="hometestmsg"></span></div>`;
+  $("#hometest").onclick = async () => { $("#hometest").disabled = true; $("#hometestmsg").textContent = "Testing… up to a minute"; try { const r = await post("selftest"); $("#hometestmsg").textContent = r.ok ? "✓ The router works." : "✗ " + (r.results.find(x => !x.ok) || {}).detail; } catch (e) { $("#hometestmsg").textContent = e.message; } $("#hometest").disabled = false; };
+}};
+
+// ---------------------------------------------------------------- models
+VIEWS.models = {static: true, async draw() {
+  [CFG, MODELS] = await Promise.all([api("config"), api("models")]);
+  const opts = (sel, none) => (none ? `<option value="">${none}</option>` : "") + ["codex", "claude"].map(b => { const ms = MODELS.filter(m => (m.backend || "codex") === b); return ms.length ? `<optgroup label="${b === "claude" ? "Claude (Claude Code)" : "ChatGPT (Codex)"}">${ms.map(m => `<option value="${esc(m.slug)}" ${m.slug === sel ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</optgroup>` : ""; }).join("");
+  const on = CFG.role_routing !== false;
+  $("#view").innerHTML = `<h1>Models</h1><p class="sub">Choose which model does what. Changes are saved right away.</p>
+    <div class="card"><label class="sw"><input type="checkbox" id="routing" ${on ? "checked" : ""}><span><b>A different model for each role</b><span class="muted">Off: one model (${esc(CFG.model)}) does everything.</span></span></label></div>
+    ${on ? Object.keys(ROLE).map(r => { const cur = CFG.roles?.[r] || {model: CFG.model, effort: CFG.effort}; return `<div class="card role" data-role="${r}">
+      <h3>${ROLE[r][0]}</h3><p class="what">${ROLE[r][1]}</p>
+      <div class="field"><span>Model</span><select data-k="model">${opts(cur.model)}</select></div>
+      <div class="field"><span>Effort</span><div class="slider" data-k="effort"></div></div>
+      <div class="field"><span></span><div class="note" style="margin-top:-8px">${r === "background" ? "Higher effort thinks longer: slower, and uses more of your limit." : "OS3's own reasoning slider wins when it's set; this is used otherwise."}</div></div>
+      <div class="field"><span>At the limit</span><div><select data-k="fb">${opts((CFG.fallback?.[r] || {}).model || "", "Wait for the reset")}</select><div class="note">Used automatically when the subscription runs out, until it resets.</div></div></div>
+    </div>`; }).join("") : ""}`;
+  const seg = (r) => { const card = document.querySelector(`[data-role="${r}"]`), m = MODELS.find(x => x.slug === card.querySelector('[data-k="model"]').value) || {efforts: ["low", "medium", "high"], default_effort: "medium"};
+    const cur = card.dataset.effort || (CFG.roles?.[r] || {}).effort || m.default_effort, sel = m.efforts.includes(cur) ? cur : m.default_effort; card.dataset.effort = sel;
+    const i = m.efforts.indexOf(sel), n = m.efforts.length - 1, pct = n ? 100 * i / n : 100;
+    const HINT = {none: "no thinking", minimal: "barely thinks", low: "quick", medium: "balanced", high: "thorough", xhigh: "very thorough, slower", max: "maximum, slowest", ultra: "maximum, slowest"};
+    card.querySelector('[data-k="effort"]').innerHTML = `<div class="top"><span class="val">${esc(sel)}</span><span class="hint">${HINT[sel] || ""}</span></div>
+      <input type="range" min="0" max="${n}" step="1" value="${i}" style="--p:${pct}%" aria-label="Effort for ${ROLE[r][0]}" aria-valuetext="${sel}">
+      <div class="ticks">${m.efforts.map((e, k) => `<span data-e="${esc(e)}" class="${k === i ? "on" : ""}">${esc(e)}</span>`).join("")}</div>`;
+    const rg = card.querySelector('input[type=range]');
+    rg.oninput = () => { const e = m.efforts[rg.value], p = n ? 100 * rg.value / n : 100; rg.style.setProperty("--p", p + "%"); card.querySelector(".val").textContent = e; card.querySelector(".hint").textContent = HINT[e] || ""; card.querySelectorAll(".ticks span").forEach((t, k) => t.classList.toggle("on", k == rg.value)); };
+    rg.onchange = () => { card.dataset.effort = m.efforts[rg.value]; save(); }; };
+  const save = async () => {
+    const roles = {}, fallback = {};
+    Object.keys(ROLE).forEach(r => { const c = document.querySelector(`[data-role="${r}"]`); if (!c) return; roles[r] = {model: c.querySelector('[data-k="model"]').value, effort: c.dataset.effort}; fallback[r] = {model: c.querySelector('[data-k="fb"]').value, effort: c.dataset.effort}; });
+    await post("config", Object.keys(roles).length ? {roles, fallback} : {}); toast("Saved");
+  };
+  Object.keys(ROLE).forEach(r => { const c = document.querySelector(`[data-role="${r}"]`); if (!c) return; seg(r);
+    c.querySelector('[data-k="model"]').onchange = () => { delete c.dataset.effort; seg(r); save(); };
+    c.querySelector('[data-k="fb"]').onchange = save;
+    c.querySelector('[data-k="effort"]').onclick = (e) => { const b = e.target.closest(".ticks [data-e]"); if (!b) return; c.dataset.effort = b.dataset.e; seg(r); save(); }; });
+  $("#routing").onchange = async (e) => { await post("config", {role_routing: e.target.checked}); toast("Saved"); render(true); };
+}};
+
+// ---------------------------------------------------------------- activity
+let AV = "all";
+VIEWS.activity = {async draw() {
+  const [rs, ev] = await Promise.all([api("requests?limit=60"), api("events?limit=120")]);
+  const what = (r) => r.source === "selftest" ? "Setup test" : r.status === "running" ? "Working…" : r.status === "gone" ? "Cancelled by OS3" : r.status === "limit" ? "Usage limit reached" : r.status === "error" ? "Failed" : r.result === "tool_call" ? "Used " + [...new Set(r.calls ? JSON.parse(r.calls) : [])].join(", ") : r.role === "background" ? "Memory / review" : "Answered";
+  const items = AV === "problems" ? ev.filter(e => EV[e.kind]).map(e => ({ts: e.ts, dot: e.level === "error" ? "bad" : e.level === "warn" ? "warn" : "good", t: `<b>${esc(EV[e.kind])}</b><div class="muted">${esc(e.msg).slice(0, 160)}</div>`}))
+    : rs.map(r => ({ts: r.ts, dot: r.status === "ok" ? "good" : r.status === "running" ? "" : "bad", t: `<span class="chip ${r.role}">${ROLE[r.role]?.[0] || "?"}</span> ${esc(what(r))}<div class="muted">${esc(modelOf(r.model))} ${esc(effortOf(r.model))} · ${r.done_ts ? Math.round(r.done_ts - r.ts) + " s" : "…"} · ${fmtN(r.in_tok)} tokens</div>`}));
+  $("#view").innerHTML = `<h1>Activity</h1><p class="sub">What OS3 asked the router, and what the router noticed or fixed.</p>
+    <div class="seg" id="aseg" style="margin-bottom:14px"><button data-a="all" aria-pressed="${AV === "all"}">Requests</button><button data-a="problems" aria-pressed="${AV === "problems"}">Problems &amp; fixes</button></div>
+    <div class="card">${items.length ? `<ul class="list">${items.map(x => `<li><i class="dot ${x.dot}" style="margin-top:8px"></i><div class="t">${x.t}</div><span class="when">${ago(x.ts)}</span></li>`).join("")}</ul>` : `<p style="margin:0">Nothing yet.</p>`}</div>`;
+  $("#aseg").onclick = (e) => { const b = e.target.closest("[data-a]"); if (b) { AV = b.dataset.a; render(true); } };
+}};
+
+// ---------------------------------------------------------------- setup (same wizard, new look)
+let WZ = null, HASOLD = null, TEST = null;
+const chip = (v) => `<button class="copy" data-copy="${esc(v)}"><code>${esc(v)}</code><span>Copy</span></button>`;
+const shots = (imgs) => `<div class="shots">${imgs.map(([n, c]) => `<figure><img src="/guide/${n}.jpg" alt="${esc(c || "OS3 screenshot")}">${c ? `<figcaption>${c}</figcaption>` : ""}</figure>`).join("")}</div>`;
+const checks = (steps) => `<ul class="checks">${steps.map(x => `<li data-s="${x.state}"><span class="i">${x.state === "ok" ? "✓" : x.state === "waiting" ? "…" : "!"}</span><div class="t"><b>${esc(x.title)}</b><div class="d">${esc(x.detail)}</div></div>${x.action ? `<button class="btn primary" data-fix="${x.action}">Fix</button>` : ""}</li>`).join("")}</ul>`;
+function screens(o) {
+  const ep = `http://localhost:${o.port}/v1`, machine = o.steps.filter(x => x.id === "engine" || x.id === "node");
+  const S = [
+    {id: "welcome", title: "Connect OS3 to your router", body: `<p class="lead">This takes about two minutes. You add one connection in OS3 (the app or website), and this app checks every step for you.</p><p class="lead">Keep OS3 open next to this window.</p>`, next: "Start"},
+    {id: "machine", title: "Check this computer", body: `<p class="lead">The router needs your AI subscription and the OS3 node on this computer.</p>${checks(machine)}`, ok: machine.every(x => x.state === "ok"), test: true},
+    {id: "old", title: "Do you already have a connection?", body: `<p class="lead">Look in OS3 → Settings → <b>api keys</b>. Is there already a <b>Local model</b> connection?</p><div class="choice"><button data-old="0"><b>No, this is new</b><small>Nothing set up yet</small></button><button data-old="1"><b>Yes, I have one</b><small>From an earlier try</small></button></div>`, choose: true}];
+  if (HASOLD) S.push({id: "delete", title: "Delete the old connection", body: `<p class="lead">In OS3: Settings → <b>api keys</b> → your <b>Local model</b> connection → scroll down → <b>delete connection</b>. Connections can't be edited, only replaced.</p>${shots([["0-delete"]])}`});
+  S.push(
+    {id: "s1", title: "Open API keys", body: `<p class="lead">In OS3, open <b>Settings</b> and click <b>api keys</b>.</p>${shots([["1-api-keys"]])}`},
+    {id: "s2", title: "Choose “Local model”", body: `<p class="lead">Under <b>provider</b>, pick <b>Local model</b>. It's near the bottom of the list.</p>${shots([["2-provider"]])}`},
+    {id: "s3", title: "Choose this computer", body: `<p class="lead">Under <b>device</b>, pick <b>${esc(o.host)}</b>, the computer this router runs on.</p>${shots([["3-device"]])}`},
+    {id: "s4", title: "Paste the endpoint", body: `<p class="lead">OS3 fills in port 11434 (that's for Ollama). Replace it with:</p><p>${chip(ep)}</p>${o.port != 11435 ? `<div class="alert warn">This router uses port <b>${o.port}</b>, not the 11435 in the picture.</div>` : ""}${shots([["4-endpoint-wrong", "✗ what OS3 fills in"], ["4-endpoint", "✓ what it should be"]])}`},
+    {id: "s5", title: "Type a model id", body: `<p class="lead">Type this. It's only a label; the router picks the real models (see Models).</p><p>${chip(o.model)}</p>${shots([["5-model"]])}`},
+    {id: "s6", title: "Paste the API key", body: `<p>${chip(o.key)}</p>${shots([["6-key"]])}`},
+    {id: "s7", title: "Save", body: `<p class="lead">Press <b>save connection</b>. OS3 tests it (up to a minute) and should show <b>registered</b> and <b>last used · ok</b>.</p>${shots([["7-saved"]])}`, next: "I saved it"},
+    {id: "wait", live: true});
+  return S;
+}
+function waitScreen(o) {
+  const c = o.steps.find(x => x.id === "connection");
+  if (c.state === "ok") return {title: "You're connected! 🎉", body: `<p class="lead">Say “hi” to OS3 to try it. You can pick which model does what under <b>Models</b>.</p>${o.share_reports == null ? `<div class="alert good"><b>One question: share problem reports with the developer?</b><br>If something breaks or gets fixed, the router sends a short anonymous note (version, OS, what happened). No messages, names or keys.<div class="row" style="margin-top:10px"><button class="btn primary" data-share="1">Yes, share</button><button class="btn" data-share="0">No thanks</button></div></div>` : ""}`, done: true};
+  if (c.state === "error") return {title: "Almost: OS3 uses a different key", body: `<div class="alert bad">${esc(c.detail)}</div><button class="btn primary" data-goto="delete">Show me how to fix it</button>`};
+  return {title: "Waiting for OS3…", body: `<p class="lead">This continues by itself as soon as OS3 reaches the router.</p><p class="muted">Nothing after a minute? Check the device and the endpoint port, or open Help.</p>`};
+}
+const testBox = () => `<div style="margin-top:16px"><button class="btn" id="runtest" ${TEST === "run" ? "disabled" : ""}>${TEST === "run" ? "Testing… up to a minute" : "Test my setup"}</button>${TEST && TEST !== "run" ? checks(TEST.results.map(r => ({state: r.ok ? "ok" : "error", title: r.test, detail: r.detail}))) : ""}</div>`;
+VIEWS.setup = {async draw() {
+  const o = S.ob; if (o.problem === "wrong_key") HASOLD = true;
+  const SC = screens(o);
+  if (WZ === null) WZ = o.done ? "done" : 0;
+  if (WZ === "done") { $("#view").innerHTML = `<div class="wiz"><h1>Setup</h1><p class="sub">Everything the router checks, live.</p>${checks(o.steps)}${testBox()}<div class="wnav"><div class="grow"></div><button class="btn" data-goto="0">Set up again</button></div></div>`; return; }
+  WZ = Math.min(WZ, SC.length - 1);
+  const sc = SC[WZ].live ? Object.assign({}, SC[WZ], waitScreen(o)) : SC[WZ];
+  $("#view").innerHTML = `<div class="wiz ${FIRST ? DIR : ""}"><div class="bar"><i style="width:${Math.round(100 * WZ / (SC.length - 1))}%"></i></div><div class="stepno">Step ${WZ + 1} of ${SC.length}</div>
+    <h1>${sc.title}</h1>${sc.body}${sc.ok === false ? `<p class="muted">Fix the red items first, or open Help.</p>` : ""}${sc.test && sc.ok !== false ? testBox() : ""}
+    <div class="wnav">${WZ > 0 ? `<button class="btn" data-goto="${WZ - 1}">Back</button>` : ""}<a class="link" data-go="help">Having trouble?</a><div class="grow"></div>
+    ${sc.choose || sc.live && !sc.done ? "" : sc.done ? `<button class="btn primary big" data-goto="home">Done</button>` : `<button class="btn primary big" data-goto="${WZ + 1}" ${sc.ok === false ? "disabled" : ""}>${sc.next || "Next"}</button>`}</div></div>`;
+}};
+
+// ---------------------------------------------------------------- help
+VIEWS.help = {static: true, async draw(first) {
+  $("#view").innerHTML = `<h1>Help</h1><p class="sub">Something not working? Start here.</p>
+    <div class="card"><h2>Find the problem</h2><p class="muted" style="margin-top:-6px">Describe it; the router checks itself and suggests a fix. Uses a little of your Codex limit.</p>
+      <textarea id="hp" rows="3" placeholder="e.g. OS3 says the device is offline"></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="hgo">Find the problem</button><span class="muted" id="hmsg"></span></div><div id="hout"></div></div>
+    <div class="card" style="margin-top:16px" id="reportcard"><h2>Report a problem</h2><p class="muted" style="margin-top:-6px">Tell the developer. Anonymous: no OS3 messages, names or keys.</p>
+      <textarea id="rt" rows="3" placeholder="What happened, and what did you expect?"></textarea>
+      <label class="sw" style="border:0;padding:10px 0 0"><input type="checkbox" id="rd" checked><span>Include the router's diagnostics</span></label>
+      <div class="row" style="margin-top:6px"><button class="btn primary" id="rs">Send report</button><span class="muted" id="rm"></span></div></div>
+    <div class="card" style="margin-top:16px"><h2>Common problems</h2><ul class="list">
+      <li><div class="t"><b>OS3 says the device is offline</b><div class="muted">In OS3's connection, the device must be this computer, and the endpoint must end in :${S.ob?.port || 11435}/v1.</div></div></li>
+      <li><div class="t"><b>“This model did not make a tool call”</b><div class="muted">Check the API key is the router's, then save again. One retry is normal.</div></div></li>
+      <li><div class="t"><b>You reinstalled or changed something</b><div class="muted">Connections can't be edited in OS3: delete it and run Setup again.</div></div></li>
+      <li><div class="t"><b>Usage limit reached</b><div class="muted">Set a fallback model under Models so OS3 keeps working.</div></div></li></ul></div>`;
+  if (location.hash.includes("report") || window._focusReport) { $("#reportcard").scrollIntoView(); $("#rt").focus(); window._focusReport = false; }
+  $("#rs").onclick = async () => { const t = $("#rt").value.trim(); if (!t) return $("#rt").focus(); $("#rs").disabled = true; try { const r = await post("report", {text: t, diagnostics: $("#rd").checked}); $("#rm").textContent = r.message; if (r.ok) $("#rt").value = ""; } catch (e) { $("#rm").textContent = e.message; } $("#rs").disabled = false; };
+  $("#hgo").onclick = async () => {
+    const p = $("#hp").value.trim(); if (!p) return $("#hp").focus();
+    $("#hgo").disabled = true; $("#hmsg").textContent = "Looking… (up to a minute)"; $("#hout").innerHTML = "";
+    try { const r = await post("selffix", {problem: p, step: VIEW});
+      $("#hout").innerHTML = r.error ? `<div class="alert bad">${esc(r.error)}</div>` : `<div class="alert good" style="margin-top:14px"><b>${esc(r.summary)}</b></div>${r.steps?.length ? `<ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}${(r.actions || []).map(a => `<div class="row" style="margin-top:8px"><button class="btn primary" data-fix="${esc(a.id)}" data-args="${esc(a.args_json)}">${esc(a.label)}</button><span class="muted">${esc(a.why)}</span></div>`).join("")}`;
+    } catch (e) { $("#hout").innerHTML = `<div class="alert bad">${esc(e.message)}</div>`; }
+    $("#hgo").disabled = false; $("#hmsg").textContent = "";
+  };
+}};
+
+// ---------------------------------------------------------------- settings
+VIEWS.settings = {static: true, async draw() {
+  CFG = await api("config");
+  const sw = (k, t, d) => `<label class="sw"><input type="checkbox" data-k="${k}" ${CFG[k] ? "checked" : ""}><span><b>${t}</b><span class="muted">${d}</span></span></label>`;
+  $("#view").innerHTML = `<h1>Settings</h1><p class="sub">Most people never need to change these.</p>
+    <div class="card">${sw("auto_update", "Update automatically", "New versions are tested on this computer first and switched to without interrupting OS3.")}
+      ${sw("watchdog", "Watch over the OS3 node", "Restarts this computer's OS3 node when it gets stuck.")}
+      ${sw("share_reports", "Share problem reports", "Anonymous notes to the developer when something breaks or gets fixed.")}</div>
+    <div class="card" style="margin-top:16px"><h2>Connection details</h2>
+      <div class="mrow"><span>Endpoint</span>${chip(`http://localhost:${CFG.port}/v1`)}</div><div class="mrow"><span>API key</span>${chip(CFG.api_key)}</div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="rot">New API key</button><span class="muted">Then delete and add the connection in OS3 again.</span></div></div>
+    <p class="muted" style="margin-top:18px">OS3 Router ${esc(S.status?.version)} · <a class="link" href="/" target="_blank">Open the web dashboard</a></p>`;
+  document.querySelectorAll("[data-k]").forEach(i => i.onchange = async () => { await post("config", {[i.dataset.k]: i.checked}); toast("Saved"); });
+  $("#rot").onclick = async () => { if (!confirm("Make a new API key? OS3 stops working until you add the connection again.")) return; await post("key/rotate"); toast("New key made"); render(true); };
+}};
+
+// ---------------------------------------------------------------- shared clicks
+document.addEventListener("click", async (e) => {
+  const t = e.target, g = t.closest("[data-go]"), goto = t.closest("[data-goto]"), cp = t.closest("[data-copy]"), fix = t.closest("[data-fix]"), img = t.closest(".shots img"), old = t.closest("[data-old]"), share = t.closest("[data-share]");
+  if (g) { if (g.dataset.focus) window._focusReport = true; go(g.dataset.go); }
+  else if (goto) { const v = goto.dataset.goto; if (v === "home") { WZ = "done"; go("home"); } else { const to = v === "delete" ? (HASOLD = true, screens(S.ob).findIndex(x => x.id === "delete")) : Number(v); DIR = typeof WZ === "number" && to < WZ ? "back" : "fwd"; WZ = to; render(true); $("#main").scrollTop = 0; } }
+  else if (cp) copy(cp.dataset.copy);
+  else if (img) { $("#lightbox img").src = img.src; $("#lightbox").hidden = false; }
+  else if (old) { HASOLD = old.dataset.old === "1"; WZ = screens(S.ob).findIndex(x => x.id === "old") + 1; render(true); }
+  else if (share) { await post("config", {share_reports: share.dataset.share === "1"}); toast(share.dataset.share === "1" ? "Thank you!" : "OK"); render(true); }
+  else if (t.id === "runtest") { TEST = "run"; render(true); try { TEST = await post("selftest"); } catch (err) { TEST = {results: [{test: "Test", ok: false, detail: err.message}]}; } render(true); }
+  else if (fix) { fix.disabled = true; fix.textContent = "Working…"; try { const r = await post("selffix/action", {id: fix.dataset.fix, args_json: fix.dataset.args || "{}"}); toast((r.ok ? "✓ " : "✗ ") + r.message); } catch (err) { toast(err.message); } render(true); }
+});
+$("#lightbox").onclick = () => $("#lightbox").hidden = true;
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("#lightbox").hidden = true; });
+
+async function whatsNew() {
+  try {
+    const w = await api("whatsnew"); if (!w.show) return;
+    const items = (body) => { const out = []; body.split("\n").forEach(l => { if (/^\s*- /.test(l)) out.push(l.replace(/^\s*- /, "")); else if (out.length && l.trim()) out[out.length - 1] += " " + l.trim(); });
+      return out.map(t => "<li>" + esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>") + "</li>").join(""); };
+    $("#wnt").textContent = "What's new in " + w.version;
+    $("#wnb").innerHTML = w.sections.map(x => `<h3>${esc(x.title)}</h3><ul>${items(x.body)}</ul>`).join("");
+    $("#whatsnew").hidden = false; $("#wnc").focus();
+  } catch (e) {}
+}
+$("#wnc").onclick = async () => { $("#whatsnew").hidden = true; try { await post("whatsnew/seen"); } catch (e) {} };
+(async () => { await load(); whatsNew(); go((location.hash.slice(1).split("?")[0]) || (S.ob && !S.ob.done ? "setup" : "home")); })();
+</script>
+</body>
+</html>
