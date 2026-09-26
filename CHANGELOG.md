@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.4 (2026-09-26)
+- Windows: Codex requests now start without opening a flashing Terminal window.
+
 ## 0.3.3 (2026-09-26)
 - If you opt in to problem reports, they now go through a protected public endpoint instead of a Discord webhook in the app. You can change the endpoint or turn reporting off.
 - The previously exposed webhook still needs to be revoked separately.
