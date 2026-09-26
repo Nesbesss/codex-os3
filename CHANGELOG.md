@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.2 (2026-09-26)
+- Problem reports are now off until the developer configures a webhook, so the app no longer ships with an exposed webhook.
+
 ## 0.3.1 (2026-09-25)
 - **Report a problem:** a button in the dashboard (and under Get help) to tell the developer what went wrong,
   with the router's diagnostics if you like. Anonymous: no OS3 messages, names or keys
