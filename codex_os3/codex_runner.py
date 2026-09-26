@@ -56,7 +56,8 @@ def known_features(codex):
     --disable is a hard error, and the set changes between versions."""
     if codex not in _known:
         try:
-            out = subprocess.run([codex, "features", "list"], capture_output=True, text=True, timeout=30).stdout
+            out = subprocess.run([codex, "features", "list"], capture_output=True, text=True, timeout=30,
+                                 **platform_util.popen_group_kwargs()).stdout
             _known[codex] = {line.split()[0] for line in out.splitlines() if line.strip()}
         except (OSError, subprocess.SubprocessError):
             _known[codex] = set()

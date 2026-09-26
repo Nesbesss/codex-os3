@@ -49,7 +49,7 @@ def pid_alive(pid):
 def popen_group_kwargs():
     """Start a child in its own process group so we can kill it with its children."""
     if WINDOWS:
-        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+        return {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW}
     return {"start_new_session": True}
 
 
