@@ -219,10 +219,13 @@ Uninstall: `bash install.sh --uninstall [--purge]` · Windows: `install.ps1 -Uni
 
 `tools/reports_to_issues.py` reads the reports channel with a Discord bot and turns problems into GitHub issues
 (label `report`, duplicates become "+1" comments). Run it on your own machine, e.g. from an OS3 scheduled task;
-the bot token stays there (`~/.os3-reports/discord_token`), never in this repo. Set
-`CODEX_OS3_REPORT_WEBHOOK` only on maintainer-controlled installs; no webhook credential is bundled with the client.
-The previously published webhook must be revoked: deleting it from new code does not remove it from Git history
-or installed copies.
+the bot token stays there (`~/.os3-reports/discord_token`), never in this repo. New client code sends
+opt-in reports to `https://os3-router-report-intake.vercel.app/api/report`. The separate
+[`report-intake`](report-intake/README.md) Vercel Function validates and rate-limits submissions, then forwards
+them to the same Discord reports channel. Its webhook is a sensitive Vercel Production environment variable,
+never bundled with the client. `CODEX_OS3_REPORT_ENDPOINT` can override the public endpoint for testing;
+setting it to an empty string disables reporting. This client change is staged on a feature branch and has
+not been released to existing installs. Previously published webhook copies remain valid until separately revoked.
 
 ## Development
 

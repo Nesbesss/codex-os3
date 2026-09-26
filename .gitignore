@@ -5,3 +5,4 @@ __pycache__/
 app/macos/.build/
 app/macos/build/
 bench/template.json
+report-intake/node_modules/
