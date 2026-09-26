@@ -2,11 +2,15 @@
 (share_reports). Sent: version, OS, a random install id and the event (errors, what Self fix
 found and did, automatic repairs), passed through export.redact. Never message contents, names,
 hostnames or keys. At most 10 per hour per install, in the background."""
-import json, platform, threading, time, urllib.request, uuid
+import json, os, platform, threading, time, urllib.request, uuid
 
 from . import __version__, config, store
 
-URL = "https://discord.com/api/webhooks/1553142523109842974/uWcpqC1Kaz45t63k7-5Mu1q4mYCQ5yQLlZq7dOChydrSCX8vS3qaeuBNslEF-p09mW8k"
+
+def _url():
+    return os.environ.get("CODEX_OS3_REPORT_WEBHOOK", "")
+
+
 KINDS = {"selffix", "selffix_action", "codex_update", "update_failed", "restart_agent", "error", "fallback", "selftest"}
 PER_HOUR = 10
 ICON = {"error": "🔴", "warn": "🟠", "info": "🟢"}
@@ -22,7 +26,7 @@ def install_id():
 
 def maybe_send(kind, msg, level="info"):
     """Called for every event; sends the interesting ones when the user opted in."""
-    if kind not in KINDS or not URL:
+    if kind not in KINDS or not _url():
         return
     try:
         if config.load().get("share_reports") is not True:
@@ -44,8 +48,10 @@ def user_report(text, diagnostics=True):
     """"Report a problem" from the dashboard: sent because the user asked, whatever share_reports
     says. -> (ok, message)."""
     text = (text or "").strip()
-    if not text or not URL:
+    if not text:
         return False, "nothing to send"
+    if not _url():
+        return False, "problem reporting is not configured"
     now = time.time()
     sent = [t for t in (store.kv_get("user_report_times") or []) if now - t < 3600]
     if len(sent) >= 5:
@@ -69,7 +75,7 @@ def user_report(text, diagnostics=True):
 def _post(text):
     try:
         urllib.request.urlopen(urllib.request.Request(
-            URL, json.dumps({"username": "os3-router reports", "content": text,
+            _url(), json.dumps({"username": "os3-router reports", "content": text,
                              "allowed_mentions": {"parse": []}}).encode(),
             {"Content-Type": "application/json", "User-Agent": "os3-router/" + __version__}), timeout=15)
     except Exception:

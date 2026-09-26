@@ -1,5 +1,6 @@
 """Offline tests (no Codex calls). Each case is a failure seen in real OS3 traffic."""
 import json, os, sys, tempfile, time, unittest
+from unittest import mock
 
 os.environ["CODEX_OS3_HOME"] = tempfile.mkdtemp(prefix="cxos3-test-")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -358,6 +359,26 @@ class WhatsNewTest(unittest.TestCase):
 
 
 class ReportTest(unittest.TestCase):
+    def test_no_endpoint_disables_reports(self):
+        from codex_os3 import config, report
+        with mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": ""}):
+            with mock.patch.object(report, "_post") as post:
+                config.save({"share_reports": True})
+                try:
+                    report.maybe_send("error", "example")
+                    self.assertEqual(report.user_report("example"), (False, "problem reporting is not configured"))
+                    post.assert_not_called()
+                finally:
+                    config.save({"share_reports": None})
+
+    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": "https://example.invalid/test"})
+    def test_posts_to_configured_endpoint(self):
+        from codex_os3 import report
+        with mock.patch.object(report.urllib.request, "urlopen") as opened:
+            report._post("example")
+        self.assertEqual(opened.call_args.args[0].full_url, "https://example.invalid/test")
+
+    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": "https://example.invalid/test"})
     def test_opt_in_redacted_and_rate_limited(self):
         from codex_os3 import config, report
         sent = []
@@ -384,6 +405,7 @@ class ReportTest(unittest.TestCase):
 
 
 class UserReportTest(unittest.TestCase):
+    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": "https://example.invalid/test"})
     def test_sent_on_request_redacted_limited(self):
         from codex_os3 import config, report
         sent = []
