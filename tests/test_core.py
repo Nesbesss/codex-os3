@@ -322,6 +322,28 @@ class EffortTest(unittest.TestCase):
         self.assertEqual(roles.fit_effort("claude-haiku-4-5", "xhigh"), "high")
 
 
+class WindowsProcessTest(unittest.TestCase):
+    def test_codex_children_do_not_open_a_console_window(self):
+        from codex_os3 import platform_util
+        with mock.patch.object(platform_util, "WINDOWS", True), \
+             mock.patch.object(platform_util.subprocess, "CREATE_NEW_PROCESS_GROUP", 0x200, create=True), \
+             mock.patch.object(platform_util.subprocess, "CREATE_NO_WINDOW", 0x08000000, create=True):
+            self.assertEqual(platform_util.popen_group_kwargs(), {"creationflags": 0x08000200})
+
+    def test_feature_probe_uses_child_process_flags(self):
+        from codex_os3 import codex_runner
+        codex = "codex-for-window-test"
+        codex_runner._known.pop(codex, None)
+        with mock.patch.object(codex_runner.platform_util, "popen_group_kwargs",
+                               return_value={"creationflags": 0x08000200}), \
+             mock.patch.object(codex_runner.subprocess, "run",
+                               return_value=mock.Mock(stdout="computer_use stable\n")) as run:
+            self.assertEqual(codex_runner.known_features(codex), {"computer_use"})
+        run.assert_called_once_with([codex, "features", "list"], capture_output=True,
+                                    text=True, timeout=30, creationflags=0x08000200)
+        codex_runner._known.pop(codex, None)
+
+
 class WindowsBinTest(unittest.TestCase):
     def test_npm_shims_resolve_to_native_exe(self):
         from codex_os3.platform_util import native_bin
