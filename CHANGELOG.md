@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 (2026-09-26)
+- **The OS3 Router app:** a calm, simple app with your status, your limits as rings, the models per role with
+  an effort slider and a fallback, the setup wizard, help and problem reports. On macOS it opens as its own
+  window (from Launchpad or the menu bar icon); anywhere else at `http://localhost:11435/app`
+- **Mac:** the app now also comes as a DMG. The first time, macOS asks you to approve it once:
+  System Settings → Privacy & Security → Open Anyway. Updates of the router don't ask again
+- Smoother look: pages fade in, rings fill up, light and dark mode follow your system
+
 ## 0.3.4 (2026-09-26)
 - Windows: Codex requests now start without opening a flashing Terminal window.
 
