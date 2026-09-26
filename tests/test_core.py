@@ -361,7 +361,7 @@ class WhatsNewTest(unittest.TestCase):
 class ReportTest(unittest.TestCase):
     def test_no_endpoint_disables_reports(self):
         from codex_os3 import config, report
-        with mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": ""}):
+        with mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_ENDPOINT": ""}):
             with mock.patch.object(report, "_post") as post:
                 config.save({"share_reports": True})
                 try:
@@ -371,14 +371,16 @@ class ReportTest(unittest.TestCase):
                 finally:
                     config.save({"share_reports": None})
 
-    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": "https://example.invalid/test"})
+    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_ENDPOINT": "https://example.invalid/test"})
     def test_posts_to_configured_endpoint(self):
         from codex_os3 import report
         with mock.patch.object(report.urllib.request, "urlopen") as opened:
-            report._post("example")
-        self.assertEqual(opened.call_args.args[0].full_url, "https://example.invalid/test")
+            report._post(report._payload("error", "example"))
+        req = opened.call_args.args[0]
+        self.assertEqual(req.full_url, "https://example.invalid/test")
+        self.assertEqual(set(json.loads(req.data)), {"kind", "level", "version", "os", "installId", "message"})
 
-    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": "https://example.invalid/test"})
+    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_ENDPOINT": "https://example.invalid/test"})
     def test_opt_in_redacted_and_rate_limited(self):
         from codex_os3 import config, report
         sent = []
@@ -394,7 +396,7 @@ class ReportTest(unittest.TestCase):
             report.maybe_send("error", "failed with key cx-0123456789abcdef0123456789abcdef")
             time.sleep(0.2)
             self.assertEqual(len(sent), 1)
-            self.assertNotIn("0123456789abcdef", sent[0])
+            self.assertNotIn("0123456789abcdef", sent[0]["message"])
             for _ in range(20):
                 report.maybe_send("error", "again")
             time.sleep(0.3)
@@ -405,7 +407,7 @@ class ReportTest(unittest.TestCase):
 
 
 class UserReportTest(unittest.TestCase):
-    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_WEBHOOK": "https://example.invalid/test"})
+    @mock.patch.dict(os.environ, {"CODEX_OS3_REPORT_ENDPOINT": "https://example.invalid/test"})
     def test_sent_on_request_redacted_limited(self):
         from codex_os3 import config, report
         sent = []
@@ -416,8 +418,8 @@ class UserReportTest(unittest.TestCase):
             ok, _ = report.user_report("broken after update, key cx-0123456789abcdef0123456789abcdef")
             time.sleep(0.2)
             self.assertTrue(ok)
-            self.assertIn("user_report", sent[0])
-            self.assertNotIn("0123456789abcdef", sent[0])
+            self.assertEqual(sent[0]["kind"], "user_report")
+            self.assertNotIn("0123456789abcdef", sent[0]["message"])
             for _ in range(6):
                 ok, msg = report.user_report("again", diagnostics=False)
             self.assertFalse(ok)

@@ -1,0 +1,8 @@
+{
+  "name": "os3-router-report-intake",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test"},
+  "dependencies": {"@vercel/firewall": "1.2.5"},
+  "engines": {"node": "24.x"}
+}

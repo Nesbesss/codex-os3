@@ -1,0 +1,19 @@
+{
+  "firewallEnabled": true,
+  "rules": [
+    {
+      "name": "OS3 report intake",
+      "description": "Free Hobby rate limit for public report submissions",
+      "active": true,
+      "conditionGroup": [
+        {"conditions": [{"type": "rate_limit_api_id", "op": "eq", "value": "os3-report-intake"}]}
+      ],
+      "action": {
+        "mitigate": {
+          "action": "rate_limit",
+          "rateLimit": {"algo": "fixed_window", "window": 600, "limit": 12, "keys": ["ip"], "action": "rate_limit"}
+        }
+      }
+    }
+  ]
+}
