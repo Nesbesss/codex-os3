@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3 (2026-09-26)
+- If you opt in to problem reports, they now go through a protected public endpoint instead of a Discord webhook in the app. You can change the endpoint or turn reporting off.
+- The previously exposed webhook still needs to be revoked separately.
+
 ## 0.3.2 (2026-09-26)
 - Problem reports are now off until the developer configures a webhook, so the app no longer ships with an exposed webhook.
 
