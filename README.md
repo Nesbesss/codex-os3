@@ -194,9 +194,10 @@ The router does not load your `~/.claude/settings.json`; it uses the login you m
 
 ## Privacy and security
 
-- **Problem reports are opt-in.** The wizard asks once. If you say yes, errors and what Self fix or the router
-  fixed are sent to the developer's Discord channel: version, OS, a random install id and the event, with keys
-  and tokens removed. Never message contents, names or hostnames. Switch it off in Settings anytime.
+- **Problem reports are opt-in.** The wizard asks once. If you say yes and a reporting endpoint is configured,
+  errors and what Self fix or the router fixed can be sent to the developer's Discord channel: version, OS,
+  a random install id and the event, with keys and tokens removed. Never message contents, names or hostnames.
+  Switch it off in Settings anytime.
 
 
 - The router listens on `127.0.0.1` only by default, and `/v1` always needs the API key
@@ -218,7 +219,10 @@ Uninstall: `bash install.sh --uninstall [--purge]` · Windows: `install.ps1 -Uni
 
 `tools/reports_to_issues.py` reads the reports channel with a Discord bot and turns problems into GitHub issues
 (label `report`, duplicates become "+1" comments). Run it on your own machine, e.g. from an OS3 scheduled task;
-the bot token stays there (`~/.os3-reports/discord_token`), never in this repo.
+the bot token stays there (`~/.os3-reports/discord_token`), never in this repo. Set
+`CODEX_OS3_REPORT_WEBHOOK` only on maintainer-controlled installs; no webhook credential is bundled with the client.
+The previously published webhook must be revoked: deleting it from new code does not remove it from Git history
+or installed copies.
 
 ## Development
 
